@@ -10,7 +10,7 @@ import type { WSMessage } from './types'
 
 const route = useRoute()
 const chatStore = useChatStore()
-const { sendMessage, connect, onMessage, disconnect, connected } = useWebSocket()
+const { sendMessage, connect, onMessage, disconnect, connected, removeMessageHandler } = useWebSocket()
 
 const wsInitialized = ref(false)
 let refreshInterval: ReturnType<typeof setInterval> | null = null
@@ -52,6 +52,7 @@ watch(() => chatStore.isLoggedIn, (loggedIn) => {
       refreshInterval = null
     }
     disconnect()
+    removeMessageHandler(handleWsMessage)
     wsInitialized.value = false
   }
 })
