@@ -7,17 +7,7 @@ const chatStore = useChatStore()
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 
-const { sendMessage: sendWsMessage, messages: wsMessages } = useWebSocket(chatStore.userId)
-
-watch(() => wsMessages.value, (newMessages) => {
-  console.log('wsMessages changed:', newMessages)
-  if (newMessages && newMessages.length > 0) {
-    const latestMsg = newMessages[newMessages.length - 1]
-    console.log('Adding message to store:', latestMsg)
-    chatStore.addMessage(latestMsg)
-    wsMessages.value = []
-  }
-}, { deep: true })
+const { sendMessage: sendWsMessage } = useWebSocket(chatStore.userId)
 
 watch(() => chatStore.messages?.length || 0, async () => {
   await nextTick()
@@ -45,7 +35,18 @@ async function handleSend() {
   const wsMsg = await chatStore.sendMessage(messageInput.value.trim())
   if (wsMsg) {
     console.log('Sending message via WebSocket:', wsMsg)
-    sendWsMessage(wsMsg)
+    const localMessage = {
+      id: `temp-${Date.now()}`,
+      sender_id: chatStore.currentUser.id,
+      receiver_id: wsMsg.to,
+      receiver_type: wsMsg.to_type,
+      content: wsMsg.content,
+      type: wsMsg.msg_type,
+      status: 0,
+      created_at: new Date().toISOString()
+    }
+    chatStore.messages.push(localMessage)
+    await sendWsMessage(wsMsg)
     messageInput.value = ''
   }
 }

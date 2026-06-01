@@ -129,7 +129,9 @@ export const useChatStore = defineStore('chat', () => {
       created_at: new Date(msg.timestamp * 1000).toISOString()
     }
     
-    const isTargetChat = (currentFriend.value && msg.from === currentFriend.value.id && msg.to_type === 0) ||
+    const isTargetChat = (currentFriend.value && 
+                          ((msg.from === currentFriend.value.id && msg.to_type === 0) || 
+                           (msg.to === currentFriend.value.id && msg.to === currentUser.value?.id && msg.to_type === 0))) ||
                         (currentGroup.value && msg.to === currentGroup.value.id && msg.to_type === 1)
     
     console.log('addMessage: isTargetChat', isTargetChat)
