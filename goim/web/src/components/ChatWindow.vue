@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
+import { useWebSocket } from '@/composables/useWebSocket'
 
 const chatStore = useChatStore()
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
+const { sendMessage } = useWebSocket()
 
 watch(() => chatStore.messages?.length || 0, async () => {
   await nextTick()
@@ -44,12 +46,7 @@ async function handleSend() {
     }
     chatStore.messages.push(localMessage)
     
-    if (chatStore.wsSendMessage) {
-      await chatStore.wsSendMessage(wsMsg)
-    } else {
-      console.error('WebSocket send function not initialized')
-    }
-    
+    await sendMessage(wsMsg)
     messageInput.value = ''
   }
 }

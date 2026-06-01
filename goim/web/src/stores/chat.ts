@@ -18,17 +18,6 @@ export const useChatStore = defineStore('chat', () => {
 
   const isLoggedIn = computed(() => !!token.value && !!userId.value)
 
-  const wsSendMessage = ref<((msg: WSMessage) => Promise<boolean>) | null>(null)
-  const wsIsConnected = ref(false)
-
-  function setWsSendMessage(sendFunc: (msg: WSMessage) => Promise<boolean>) {
-    wsSendMessage.value = sendFunc
-  }
-
-  function setWsConnected(connected: boolean) {
-    wsIsConnected.value = connected
-  }
-
   async function login(username: string, password: string) {
     const result = await api.login({ username, password })
     token.value = result.token
@@ -155,7 +144,7 @@ export const useChatStore = defineStore('chat', () => {
     
     const isTargetChat = (currentFriend.value && 
                           ((msg.from === currentFriend.value.id && msg.to_type === 0) || 
-                           (msg.to === currentFriend.value.id && msg.to === currentUser.value?.id && msg.to_type === 0))) ||
+                           (msg.to === currentFriend.value.id && msg.to_type === 0))) ||
                         (currentGroup.value && msg.to === currentGroup.value.id && msg.to_type === 1)
     
     console.log('addMessage: isTargetChat', isTargetChat)
@@ -217,10 +206,6 @@ export const useChatStore = defineStore('chat', () => {
     token,
     userId,
     isLoggedIn,
-    wsSendMessage,
-    wsIsConnected,
-    setWsSendMessage,
-    setWsConnected,
     login,
     register,
     logout,
