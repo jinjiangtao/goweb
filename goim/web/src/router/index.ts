@@ -16,6 +16,11 @@ const routes: RouteRecordRaw[] = [
     name: 'AdminUsers',
     component: () => import('../views/AdminUsers.vue'),
   },
+  {
+    path: '/admin/messages',
+    name: 'AdminMessages',
+    component: () => import('../views/AdminMessages.vue'),
+  },
 ]
 
 const router = createRouter({

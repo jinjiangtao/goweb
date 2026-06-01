@@ -28,20 +28,16 @@ export const useChatStore = defineStore('chat', () => {
     userId.value = payload.user_id
     localStorage.setItem('userId', payload.user_id)
     
-    currentUser.value = {
-      id: payload.user_id,
-      username: payload.username,
-      nickname: payload.username,
-      avatar: ''
-    }
+    // 加载用户信息
+    await loadUserProfile()
     
     await loadFriends()
     await loadGroups()
     await loadOnlineUsers()
   }
 
-  async function register(username: string, password: string, nickname: string) {
-    const user = await api.register({ username, password, nickname })
+  async function register(username: string, password: string, nickname: string, avatar: string = '') {
+    const user = await api.register({ username, password, nickname, avatar })
     currentUser.value = user
   }
 
@@ -58,6 +54,26 @@ export const useChatStore = defineStore('chat', () => {
     unreadCounts.value = {}
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
+  }
+
+  async function loadUserProfile() {
+    if (!userId.value) return
+    try {
+      const user = await api.getUserProfile(userId.value)
+      currentUser.value = user
+    } catch (error) {
+      console.error('Failed to load user profile:', error)
+    }
+  }
+
+  async function updateProfile(nickname: string, avatar: string) {
+    if (!userId.value) return
+    try {
+      const user = await api.updateProfile(userId.value, nickname, avatar)
+      currentUser.value = user
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+    }
   }
 
   function addUserToMap(user: User) {
@@ -106,6 +122,16 @@ export const useChatStore = defineStore('chat', () => {
       return userMap.value[userId].nickname
     }
     return '未知用户'
+  }
+
+  function getAvatar(userId: string): string {
+    if (currentUser.value && currentUser.value.id === userId) {
+      return currentUser.value.avatar
+    }
+    if (userMap.value[userId]) {
+      return userMap.value[userId].avatar
+    }
+    return ''
   }
 
   async function refreshFriendsOnlineStatus() {
@@ -227,6 +253,8 @@ export const useChatStore = defineStore('chat', () => {
     login,
     register,
     logout,
+    loadUserProfile,
+    updateProfile,
     loadFriends,
     loadGroups,
     loadOnlineUsers,
@@ -239,6 +267,7 @@ export const useChatStore = defineStore('chat', () => {
     addFriend,
     createGroup,
     getNickname,
+    getAvatar,
     addUserToMap
   }
 })

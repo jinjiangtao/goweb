@@ -52,6 +52,7 @@ export interface RegisterRequest {
   username: string
   password: string
   nickname: string
+  avatar?: string
 }
 
 export interface ChatState {

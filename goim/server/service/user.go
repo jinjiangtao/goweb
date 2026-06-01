@@ -90,6 +90,18 @@ func CheckFriendship(userID, friendID string) (bool, error) {
 	return storage.CheckFriendExists(userID, friendID)
 }
 
+func UpdateUserAvatar(userID, avatar string) error {
+	return storage.UpdateUserAvatar(userID, avatar)
+}
+
+func UpdateUserProfile(userID, nickname, avatar string) error {
+	return storage.UpdateUserProfile(userID, nickname, avatar)
+}
+
+func GetAllMessages(limit, offset int) ([]*model.Message, int, error) {
+	return storage.GetAllMessages(limit, offset)
+}
+
 func GetAllUsers(limit, offset int) ([]*model.User, int, error) {
 	return storage.GetAllUsers(limit, offset)
 }

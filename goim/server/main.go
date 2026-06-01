@@ -17,6 +17,9 @@ func main() {
 
 	r := gin.Default()
 
+	// 静态文件服务
+	r.Static("/uploads", "./uploads")
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
@@ -39,6 +42,9 @@ func main() {
 			user.GET("/friends", handler.GetFriends)
 			user.GET("/online-status", handler.GetOnlineStatus)
 			user.GET("/online-users", handler.GetOnlineUsers)
+			user.GET("/profile", handler.GetUserProfile)
+			user.POST("/upload-avatar", handler.UploadAvatar)
+			user.POST("/update-profile", handler.UpdateProfile)
 		}
 
 		group := api.Group("/group")
@@ -62,6 +68,7 @@ func main() {
 			admin.POST("/login", handler.AdminLogin)
 			admin.Use(handler.AdminAuthMiddleware())
 			admin.GET("/users", handler.GetAllUsers)
+			admin.GET("/messages", handler.GetAllMessages)
 		}
 	}
 

@@ -327,6 +327,45 @@ func GetGroupByID(groupID string) (*model.Group, error) {
 	return group, err
 }
 
+func UpdateUserAvatar(userID, avatar string) error {
+	_, err := db.Exec(`UPDATE users SET avatar = ?, updated_at = ? WHERE id = ?`, avatar, time.Now(), userID)
+	return err
+}
+
+func UpdateUserProfile(userID, nickname, avatar string) error {
+	_, err := db.Exec(`UPDATE users SET nickname = ?, avatar = ?, updated_at = ? WHERE id = ?`, nickname, avatar, time.Now(), userID)
+	return err
+}
+
+func GetAllMessages(limit, offset int) ([]*model.Message, int, error) {
+	var total int
+	err := db.QueryRow(`SELECT COUNT(*) FROM messages`).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := db.Query(`SELECT id, sender_id, receiver_id, receiver_type, content, type, status, created_at 
+		FROM messages 
+		ORDER BY created_at DESC 
+		LIMIT ? OFFSET ?`, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var messages []*model.Message
+	for rows.Next() {
+		msg := &model.Message{}
+		err := rows.Scan(&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.ReceiverType, &msg.Content, &msg.Type, &msg.Status, &msg.CreatedAt)
+		if err != nil {
+			return nil, 0, err
+		}
+		messages = append(messages, msg)
+	}
+
+	return messages, total, nil
+}
+
 func GetAllUsers(limit, offset int) ([]*model.User, int, error) {
 	// 获取总数
 	var total int

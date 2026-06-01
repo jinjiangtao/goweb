@@ -41,6 +41,26 @@ export async function getOnlineUsers(userID: string): Promise<OnlineUser[]> {
   return response.data
 }
 
+export async function getUserProfile(userID: string): Promise<User> {
+  const response = await api.get(`/user/profile?user_id=${userID}`)
+  return response.data
+}
+
+export async function uploadAvatar(userID: string, file: File): Promise<{ avatar: string }> {
+  const formData = new FormData()
+  formData.append('user_id', userID)
+  formData.append('avatar', file)
+  const response = await api.post('/user/upload-avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return response.data
+}
+
+export async function updateProfile(userID: string, nickname: string, avatar: string): Promise<User> {
+  const response = await api.post('/user/update-profile', { user_id: userID, nickname, avatar })
+  return response.data
+}
+
 export async function createGroup(name: string, ownerID: string): Promise<Group> {
   const response = await api.post('/group/create', { name, owner_id: ownerID })
   return response.data
@@ -108,6 +128,22 @@ export interface AdminUsersResponse {
   pagination: AdminPagination
 }
 
+export interface AdminMessage {
+  id: string
+  sender: { id: string; nickname: string; avatar: string }
+  receiver: { id: string; nickname?: string; avatar?: string; name?: string; type: string }
+  receiver_type: number
+  content: string
+  type: number
+  status: number
+  created_at: string
+}
+
+export interface AdminMessagesResponse {
+  messages: AdminMessage[]
+  pagination: AdminPagination
+}
+
 export async function adminLogin(username: string, password: string): Promise<{ token: string }> {
   const response = await api.post('/admin/login', { username, password })
   return response.data
@@ -115,6 +151,14 @@ export async function adminLogin(username: string, password: string): Promise<{ 
 
 export async function getAdminUsers(page = 1, pageSize = 10, token: string): Promise<AdminUsersResponse> {
   const response = await api.get('/admin/users', {
+    params: { page, page_size: pageSize },
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  return response.data
+}
+
+export async function getAdminMessages(page = 1, pageSize = 20, token: string): Promise<AdminMessagesResponse> {
+  const response = await api.get('/admin/messages', {
     params: { page, page_size: pageSize },
     headers: { Authorization: `Bearer ${token}` }
   })

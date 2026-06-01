@@ -32,6 +32,10 @@ function handleLogout() {
   router.push('/admin')
 }
 
+function goToMessages() {
+  router.push('/admin/messages')
+}
+
 watch(() => adminStore.isLoggedIn, (loggedIn) => {
   if (!loggedIn) {
     router.push('/admin')
@@ -65,6 +69,9 @@ onUnmounted(() => {
     <div class="admin-header">
       <h1>GoIM 管理后台 - 用户管理</h1>
       <div class="header-actions">
+        <el-button @click="goToMessages">
+          聊天记录
+        </el-button>
         <el-button type="primary" @click="handleRefresh" :loading="adminStore.loading">
           刷新
         </el-button>

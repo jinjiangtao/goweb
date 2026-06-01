@@ -2,9 +2,11 @@
 import { ref, computed } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import type { User, Group } from '@/types'
+import ProfileEdit from './ProfileEdit.vue'
 
 const chatStore = useChatStore()
 const searchQuery = ref('')
+const showProfileEdit = ref(false)
 
 const filteredFriends = computed(() => {
   if (!searchQuery.value) return chatStore.friends
@@ -51,8 +53,11 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
 <template>
   <div class="sidebar">
     <div class="sidebar-header">
-      <div class="user-info">
-        <div class="avatar">{{ getInitials(chatStore.currentUser?.nickname || 'U') }}</div>
+      <div class="user-info" @click="showProfileEdit = true">
+        <div class="avatar">
+          <img v-if="chatStore.currentUser?.avatar" :src="chatStore.currentUser.avatar" alt="头像" />
+          <span v-else>{{ getInitials(chatStore.currentUser?.nickname || 'U') }}</span>
+        </div>
         <div>
           <h4>{{ chatStore.currentUser?.nickname }}</h4>
           <p>{{ chatStore.currentUser?.username }}</p>
@@ -75,7 +80,10 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
           :key="user.id"
           class="friend-item"
         >
-          <div class="avatar">{{ getInitials(user.nickname) }}</div>
+          <div class="avatar">
+            <img v-if="user.avatar" :src="user.avatar" alt="头像" />
+            <span v-else>{{ getInitials(user.nickname) }}</span>
+          </div>
           <div class="friend-info">
             <h4>{{ user.nickname }}</h4>
             <p>{{ user.username }}</p>
@@ -103,7 +111,10 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
           :class="{ active: chatStore.currentFriend?.id === friend.id }"
           @click="selectFriend(friend)"
         >
-          <div class="avatar">{{ getInitials(friend.nickname) }}</div>
+          <div class="avatar">
+            <img v-if="friend.avatar" :src="friend.avatar" alt="头像" />
+            <span v-else>{{ getInitials(friend.nickname) }}</span>
+          </div>
           <div class="friend-info">
             <h4>{{ friend.nickname }}</h4>
             <p>{{ friend.username }}</p>
@@ -128,7 +139,10 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
           :class="{ active: chatStore.currentGroup?.id === group.id }"
           @click="selectGroup(group)"
         >
-          <div class="avatar">{{ getInitials(group.name) }}</div>
+          <div class="avatar">
+            <img v-if="group.avatar" :src="group.avatar" alt="头像" />
+            <span v-else>{{ getInitials(group.name) }}</span>
+          </div>
           <div class="friend-info">
             <h4>{{ group.name }}</h4>
             <p>群组</p>
@@ -145,6 +159,7 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
         {{ searchQuery ? '未找到匹配的联系人' : '暂无联系人' }}
       </div>
     </div>
+    <ProfileEdit :visible="showProfileEdit" @close="showProfileEdit = false" />
   </div>
 </template>
 
@@ -162,5 +177,20 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
 
 .add-friend-btn:hover {
   background: #764ba2;
+}
+
+.user-info {
+  cursor: pointer;
+}
+
+.user-info:hover {
+  opacity: 0.8;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 </style>
