@@ -18,6 +18,17 @@ export const useChatStore = defineStore('chat', () => {
 
   const isLoggedIn = computed(() => !!token.value && !!userId.value)
 
+  const wsSendMessage = ref<((msg: WSMessage) => Promise<boolean>) | null>(null)
+  const wsIsConnected = ref(false)
+
+  function setWsSendMessage(sendFunc: (msg: WSMessage) => Promise<boolean>) {
+    wsSendMessage.value = sendFunc
+  }
+
+  function setWsConnected(connected: boolean) {
+    wsIsConnected.value = connected
+  }
+
   async function login(username: string, password: string) {
     const result = await api.login({ username, password })
     token.value = result.token
@@ -84,8 +95,21 @@ export const useChatStore = defineStore('chat', () => {
     try {
       const result = await api.getOnlineUsers(userId.value)
       onlineUsers.value = result || []
-    } catch {
+      console.log('Loaded online users:', onlineUsers.value.length)
+    } catch (error) {
+      console.error('Failed to load online users:', error)
       onlineUsers.value = []
+    }
+  }
+
+  async function refreshFriendsOnlineStatus() {
+    if (!userId.value) return
+    try {
+      const result = await api.getFriends(userId.value)
+      friends.value = result || []
+      console.log('Refreshed friends online status')
+    } catch (error) {
+      console.error('Failed to refresh friends status:', error)
     }
   }
 
@@ -193,12 +217,17 @@ export const useChatStore = defineStore('chat', () => {
     token,
     userId,
     isLoggedIn,
+    wsSendMessage,
+    wsIsConnected,
+    setWsSendMessage,
+    setWsConnected,
     login,
     register,
     logout,
     loadFriends,
     loadGroups,
     loadOnlineUsers,
+    refreshFriendsOnlineStatus,
     loadMessages,
     selectFriend,
     selectGroup,

@@ -154,13 +154,21 @@ export function useWebSocket(userID: ref<string>) {
 
   let pingInterval: ReturnType<typeof setInterval> | null = null
 
-  watch(userID, (newUserID) => {
-    console.log('WebSocket: userID changed to', newUserID)
-    disconnect()
-    if (newUserID) {
-      connect()
+  watch(userID, (newUserID, oldUserID) => {
+    console.log('WebSocket: userID changed from', oldUserID, 'to', newUserID)
+    
+    if (oldUserID && oldUserID !== newUserID) {
+      console.log('WebSocket: disconnecting old connection')
+      disconnect()
     }
-  }, { immediate: true })
+    
+    if (newUserID && newUserID !== oldUserID) {
+      console.log('WebSocket: initiating connection for new userID')
+      setTimeout(() => {
+        connect()
+      }, 100)
+    }
+  }, { immediate: false })
 
   onUnmounted(() => {
     disconnect()

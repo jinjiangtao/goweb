@@ -46,6 +46,11 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.Register:
+			if existingClient, ok := h.Clients[client.UserID]; ok {
+				log.Printf("User %s already connected, closing old connection", client.UserID)
+				close(existingClient.Send)
+				existingClient.Conn.Close()
+			}
 			h.Clients[client.UserID] = client
 			cache.SetOnline(client.UserID)
 			log.Printf("User %s connected", client.UserID)
