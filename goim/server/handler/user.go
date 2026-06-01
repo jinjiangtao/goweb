@@ -65,3 +65,34 @@ func GetOnlineStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"online": cache.IsOnline(userID)})
 }
+
+func GetOnlineUsers(c *gin.Context) {
+	userID := c.Query("user_id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+
+	onlineUserIDs := cache.GetOnlineUsers()
+	var result []gin.H
+	for _, id := range onlineUserIDs {
+		if id == userID {
+			continue
+		}
+		user, err := service.GetUserByID(id)
+		if err != nil || user == nil {
+			continue
+		}
+		isFriend, _ := service.CheckFriendship(userID, id)
+		result = append(result, gin.H{
+			"id":        user.ID,
+			"username":  user.Username,
+			"nickname":  user.Nickname,
+			"avatar":    user.Avatar,
+			"online":    true,
+			"is_friend": isFriend,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}

@@ -38,6 +38,7 @@ func main() {
 			user.POST("/add-friend", handler.AddFriend)
 			user.GET("/friends", handler.GetFriends)
 			user.GET("/online-status", handler.GetOnlineStatus)
+			user.GET("/online-users", handler.GetOnlineUsers)
 		}
 
 		group := api.Group("/group")

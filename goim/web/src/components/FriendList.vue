@@ -21,6 +21,16 @@ const filteredGroups = computed(() => {
   return chatStore.groups.filter(g => g.name.toLowerCase().includes(query))
 })
 
+const filteredOnlineUsers = computed(() => {
+  const nonFriends = chatStore.onlineUsers.filter(u => !u.is_friend)
+  if (!searchQuery.value) return nonFriends
+  const query = searchQuery.value.toLowerCase()
+  return nonFriends.filter(u => 
+    u.nickname.toLowerCase().includes(query) || 
+    u.username.toLowerCase().includes(query)
+  )
+})
+
 function getInitials(name: string): string {
   return name.charAt(0).toUpperCase()
 }
@@ -32,6 +42,10 @@ function selectFriend(friend: User) {
 function selectGroup(group: Group) {
   chatStore.selectGroup(group)
 }
+
+async function handleAddFriend(user: User & { is_friend: boolean }) {
+  await chatStore.addFriend(user.id)
+}
 </script>
 
 <template>
@@ -42,10 +56,36 @@ function selectGroup(group: Group) {
     </div>
     
     <div class="search-bar">
-      <input v-model="searchQuery" type="text" placeholder="搜索好友或群组..." />
+      <input v-model="searchQuery" type="text" placeholder="搜索好友或用户..." />
     </div>
     
     <div class="friend-list">
+      <div v-if="filteredOnlineUsers.length > 0">
+        <div class="group-list">
+          <h5>在线用户</h5>
+        </div>
+        <div 
+          v-for="user in filteredOnlineUsers" 
+          :key="user.id"
+          class="friend-item"
+        >
+          <div class="avatar">{{ getInitials(user.nickname) }}</div>
+          <div class="friend-info">
+            <h4>{{ user.nickname }}</h4>
+            <p>{{ user.username }}</p>
+          </div>
+          <div class="friend-status">
+            <div class="online-dot"></div>
+            <button 
+              class="add-friend-btn"
+              @click="handleAddFriend(user)"
+            >
+              +加好友
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div v-if="filteredFriends.length > 0">
         <div class="group-list">
           <h5>好友</h5>
@@ -95,9 +135,26 @@ function selectGroup(group: Group) {
         </div>
       </div>
       
-      <div v-if="filteredFriends.length === 0 && filteredGroups.length === 0" class="empty-chat">
+      <div v-if="filteredOnlineUsers.length === 0 && filteredFriends.length === 0 && filteredGroups.length === 0" class="empty-chat">
         {{ searchQuery ? '未找到匹配的联系人' : '暂无联系人' }}
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.add-friend-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.add-friend-btn:hover {
+  background: #764ba2;
+}
+</style>

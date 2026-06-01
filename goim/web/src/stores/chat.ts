@@ -10,6 +10,7 @@ export const useChatStore = defineStore('chat', () => {
   const messages = ref<Message[]>([])
   const friends = ref<User[]>([])
   const groups = ref<Group[]>([])
+  const onlineUsers = ref<(User & { is_friend: boolean })[]>([])
   const unreadCounts = ref<Record<string, number>>({})
 
   const token = ref(localStorage.getItem('token') || '')
@@ -35,6 +36,7 @@ export const useChatStore = defineStore('chat', () => {
     
     await loadFriends()
     await loadGroups()
+    await loadOnlineUsers()
   }
 
   async function register(username: string, password: string, nickname: string) {
@@ -73,6 +75,16 @@ export const useChatStore = defineStore('chat', () => {
       groups.value = result || []
     } catch {
       groups.value = []
+    }
+  }
+
+  async function loadOnlineUsers() {
+    if (!userId.value) return
+    try {
+      const result = await api.getOnlineUsers(userId.value)
+      onlineUsers.value = result || []
+    } catch {
+      onlineUsers.value = []
     }
   }
 
@@ -144,6 +156,7 @@ export const useChatStore = defineStore('chat', () => {
     if (!userId.value) return
     await api.addFriend(userId.value, friendID)
     await loadFriends()
+    await loadOnlineUsers()
   }
 
   async function createGroup(name: string) {
@@ -159,6 +172,7 @@ export const useChatStore = defineStore('chat', () => {
     messages,
     friends,
     groups,
+    onlineUsers,
     unreadCounts,
     token,
     userId,
@@ -168,6 +182,7 @@ export const useChatStore = defineStore('chat', () => {
     logout,
     loadFriends,
     loadGroups,
+    loadOnlineUsers,
     loadMessages,
     selectFriend,
     selectGroup,

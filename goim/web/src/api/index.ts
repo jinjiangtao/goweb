@@ -32,6 +32,15 @@ export async function getOnlineStatus(userID: string): Promise<{ online: boolean
   return response.data
 }
 
+export interface OnlineUser extends User {
+  is_friend: boolean
+}
+
+export async function getOnlineUsers(userID: string): Promise<OnlineUser[]> {
+  const response = await api.get(`/user/online-users?user_id=${userID}`)
+  return response.data
+}
+
 export async function createGroup(name: string, ownerID: string): Promise<Group> {
   const response = await api.post('/group/create', { name, owner_id: ownerID })
   return response.data

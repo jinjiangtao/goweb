@@ -85,3 +85,7 @@ func GetFriends(userID string) ([]*model.User, error) {
 func GetUserByID(userID string) (*model.User, error) {
 	return storage.GetUserByID(userID)
 }
+
+func CheckFriendship(userID, friendID string) (bool, error) {
+	return storage.CheckFriendExists(userID, friendID)
+}
