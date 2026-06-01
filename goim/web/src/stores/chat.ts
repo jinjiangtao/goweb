@@ -58,12 +58,22 @@ export const useChatStore = defineStore('chat', () => {
 
   async function loadFriends() {
     if (!userId.value) return
-    friends.value = await api.getFriends(userId.value)
+    try {
+      const result = await api.getFriends(userId.value)
+      friends.value = result || []
+    } catch {
+      friends.value = []
+    }
   }
 
   async function loadGroups() {
     if (!userId.value) return
-    groups.value = await api.getGroups(userId.value)
+    try {
+      const result = await api.getGroups(userId.value)
+      groups.value = result || []
+    } catch {
+      groups.value = []
+    }
   }
 
   async function loadMessages(targetID: string, targetType: number) {
