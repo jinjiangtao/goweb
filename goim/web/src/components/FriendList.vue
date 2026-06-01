@@ -51,7 +51,13 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
 <template>
   <div class="sidebar">
     <div class="sidebar-header">
-      <h3>GoIM</h3>
+      <div class="user-info">
+        <div class="avatar">{{ getInitials(chatStore.currentUser?.nickname || 'U') }}</div>
+        <div>
+          <h4>{{ chatStore.currentUser?.nickname }}</h4>
+          <p>{{ chatStore.currentUser?.username }}</p>
+        </div>
+      </div>
       <button class="logout-btn" @click="chatStore.logout">退出</button>
     </div>
     

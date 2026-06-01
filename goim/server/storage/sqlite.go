@@ -326,3 +326,34 @@ func GetGroupByID(groupID string) (*model.Group, error) {
 	}
 	return group, err
 }
+
+func GetAllUsers(limit, offset int) ([]*model.User, int, error) {
+	// 获取总数
+	var total int
+	err := db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 获取分页用户
+	rows, err := db.Query(`SELECT id, username, password, nickname, avatar, created_at, updated_at 
+		FROM users 
+		ORDER BY created_at DESC 
+		LIMIT ? OFFSET ?`, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []*model.User
+	for rows.Next() {
+		user := &model.User{}
+		err := rows.Scan(&user.ID, &user.Username, &user.Password, &user.Nickname, &user.Avatar, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, 0, err
+		}
+		users = append(users, user)
+	}
+
+	return users, total, nil
+}

@@ -80,15 +80,18 @@ function handleKeydown(e: KeyboardEvent) {
           :key="msg.id"
           :class="['message', { self: isSelf(msg), other: !isSelf(msg) }]"
         >
-          <div class="message-bubble">
-            <template v-if="msg.type === 1">
-              <img :src="msg.content" class="message-image" />
-            </template>
-            <template v-else>
-              {{ msg.content }}
-            </template>
+          <div class="message-content">
+            <div class="message-sender">{{ chatStore.getNickname(msg.sender_id) }}</div>
+            <div class="message-bubble">
+              <template v-if="msg.type === 1">
+                <img :src="msg.content" class="message-image" />
+              </template>
+              <template v-else>
+                {{ msg.content }}
+              </template>
+            </div>
+            <div class="message-time">{{ formatTime(msg.created_at) }}</div>
           </div>
-          <div class="message-time">{{ formatTime(msg.created_at) }}</div>
         </div>
       </div>
       

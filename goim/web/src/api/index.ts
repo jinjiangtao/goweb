@@ -85,3 +85,38 @@ export async function getUnreadCounts(userID: string): Promise<Record<string, nu
   const response = await api.get(`/message/unread-counts?user_id=${userID}`)
   return response.data
 }
+
+// Admin APIs
+export interface AdminUser {
+  id: string
+  username: string
+  nickname: string
+  avatar: string
+  online: boolean
+  created_at: string
+}
+
+export interface AdminPagination {
+  page: number
+  page_size: number
+  total: number
+  total_page: number
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[]
+  pagination: AdminPagination
+}
+
+export async function adminLogin(username: string, password: string): Promise<{ token: string }> {
+  const response = await api.post('/admin/login', { username, password })
+  return response.data
+}
+
+export async function getAdminUsers(page = 1, pageSize = 10, token: string): Promise<AdminUsersResponse> {
+  const response = await api.get('/admin/users', {
+    params: { page, page_size: pageSize },
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  return response.data
+}

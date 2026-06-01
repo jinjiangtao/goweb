@@ -12,6 +12,7 @@ export const useChatStore = defineStore('chat', () => {
   const groups = ref<Group[]>([])
   const onlineUsers = ref<(User & { is_friend: boolean })[]>([])
   const unreadCounts = ref<Record<string, number>>({})
+  const userMap = ref<Record<string, User>>({})
 
   const token = ref(localStorage.getItem('token') || '')
   const userId = ref(localStorage.getItem('userId') || '')
@@ -59,11 +60,16 @@ export const useChatStore = defineStore('chat', () => {
     localStorage.removeItem('userId')
   }
 
+  function addUserToMap(user: User) {
+    userMap.value[user.id] = user
+  }
+
   async function loadFriends() {
     if (!userId.value) return
     try {
       const result = await api.getFriends(userId.value)
       friends.value = result || []
+      result.forEach((friend: User) => addUserToMap(friend))
     } catch {
       friends.value = []
     }
@@ -84,11 +90,22 @@ export const useChatStore = defineStore('chat', () => {
     try {
       const result = await api.getOnlineUsers(userId.value)
       onlineUsers.value = result || []
+      result.forEach((user: User) => addUserToMap(user))
       console.log('Loaded online users:', onlineUsers.value.length)
     } catch (error) {
       console.error('Failed to load online users:', error)
       onlineUsers.value = []
     }
+  }
+
+  function getNickname(userId: string): string {
+    if (currentUser.value && currentUser.value.id === userId) {
+      return currentUser.value.nickname
+    }
+    if (userMap.value[userId]) {
+      return userMap.value[userId].nickname
+    }
+    return '未知用户'
   }
 
   async function refreshFriendsOnlineStatus() {
@@ -203,6 +220,7 @@ export const useChatStore = defineStore('chat', () => {
     groups,
     onlineUsers,
     unreadCounts,
+    userMap,
     token,
     userId,
     isLoggedIn,
@@ -219,6 +237,8 @@ export const useChatStore = defineStore('chat', () => {
     addMessage,
     sendMessage,
     addFriend,
-    createGroup
+    createGroup,
+    getNickname,
+    addUserToMap
   }
 })

@@ -55,6 +55,14 @@ func main() {
 			message.GET("/history", handler.GetMessageHistory)
 			message.POST("/read", handler.MarkMessageRead)
 		}
+
+		// Admin API
+		admin := api.Group("/admin")
+		{
+			admin.POST("/login", handler.AdminLogin)
+			admin.Use(handler.AdminAuthMiddleware())
+			admin.GET("/users", handler.GetAllUsers)
+		}
 	}
 
 	r.GET("/ws/:userID", func(c *gin.Context) {

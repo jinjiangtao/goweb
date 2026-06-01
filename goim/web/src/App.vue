@@ -1,20 +1,26 @@
 <script setup lang="ts">
 import { onMounted, watch, ref, computed, onUnmounted } from 'vue'
-import { useChatStore } from '@/stores/chat'
-import { useWebSocket } from '@/composables/useWebSocket'
-import LoginPage from '@/components/LoginPage.vue'
-import FriendList from '@/components/FriendList.vue'
-import ChatWindow from '@/components/ChatWindow.vue'
-import type { WSMessage } from '@/types'
+import { useChatStore } from './stores/chat'
+import { useWebSocket } from './composables/useWebSocket'
+import { useRoute } from 'vue-router'
+import LoginPage from './components/LoginPage.vue'
+import FriendList from './components/FriendList.vue'
+import ChatWindow from './components/ChatWindow.vue'
+import type { WSMessage } from './types'
 
+const route = useRoute()
 const chatStore = useChatStore()
 const { sendMessage, connect, onMessage, disconnect, connected } = useWebSocket()
 
 const wsInitialized = ref(false)
 let refreshInterval: ReturnType<typeof setInterval> | null = null
 
+const isAdminPage = computed(() => {
+  return route.path.startsWith('/admin')
+})
+
 const shouldInitWs = computed(() => {
-  return chatStore.isLoggedIn && chatStore.userId && !wsInitialized.value
+  return !isAdminPage.value && chatStore.isLoggedIn && chatStore.userId && !wsInitialized.value
 })
 
 const handleWsMessage = (msg: WSMessage) => {
@@ -51,7 +57,7 @@ watch(() => chatStore.isLoggedIn, (loggedIn) => {
 })
 
 onMounted(() => {
-  if (chatStore.isLoggedIn && !chatStore.currentUser) {
+  if (!isAdminPage.value && chatStore.isLoggedIn && !chatStore.currentUser) {
     const payload = JSON.parse(atob(chatStore.token.split('.')[1]))
     chatStore.currentUser = {
       id: payload.user_id,
@@ -73,10 +79,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <LoginPage v-if="!chatStore.isLoggedIn" />
-  
-  <div v-else class="chat-container">
-    <FriendList />
-    <ChatWindow />
-  </div>
+  <router-view />
+  <template v-if="!isAdminPage">
+    <LoginPage v-if="!chatStore.isLoggedIn" />
+    
+    <div v-else class="chat-container">
+      <FriendList />
+      <ChatWindow />
+    </div>
+  </template>
 </template>
