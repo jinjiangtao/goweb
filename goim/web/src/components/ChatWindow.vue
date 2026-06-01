@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, onMounted } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { useWebSocket } from '@/composables/useWebSocket'
 
@@ -9,15 +9,17 @@ const messagesContainer = ref<HTMLElement | null>(null)
 
 const { sendMessage: sendWsMessage, messages: wsMessages } = useWebSocket(chatStore.userId)
 
-watch(wsMessages, (newMessages) => {
-  if (newMessages.length > 0) {
+watch(() => wsMessages.value, (newMessages) => {
+  console.log('wsMessages changed:', newMessages)
+  if (newMessages && newMessages.length > 0) {
     const latestMsg = newMessages[newMessages.length - 1]
+    console.log('Adding message to store:', latestMsg)
     chatStore.addMessage(latestMsg)
     wsMessages.value = []
   }
-})
+}, { deep: true })
 
-watch(() => chatStore.messages.length, async () => {
+watch(() => chatStore.messages?.length || 0, async () => {
   await nextTick()
   if (messagesContainer.value) {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
@@ -42,6 +44,7 @@ async function handleSend() {
 
   const wsMsg = await chatStore.sendMessage(messageInput.value.trim())
   if (wsMsg) {
+    console.log('Sending message via WebSocket:', wsMsg)
     sendWsMessage(wsMsg)
     messageInput.value = ''
   }

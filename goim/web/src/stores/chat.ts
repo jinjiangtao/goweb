@@ -53,6 +53,7 @@ export const useChatStore = defineStore('chat', () => {
     messages.value = []
     friends.value = []
     groups.value = []
+    onlineUsers.value = []
     unreadCounts.value = {}
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
@@ -90,8 +91,13 @@ export const useChatStore = defineStore('chat', () => {
 
   async function loadMessages(targetID: string, targetType: number) {
     if (!userId.value) return
-    messages.value = await api.getMessageHistory(userId.value, targetID, targetType)
-    messages.value.reverse()
+    try {
+      const result = await api.getMessageHistory(userId.value, targetID, targetType)
+      messages.value = result || []
+      messages.value.reverse()
+    } catch {
+      messages.value = []
+    }
   }
 
   function selectFriend(friend: User) {
@@ -108,6 +114,10 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   function addMessage(msg: WSMessage) {
+    console.log('addMessage: received', msg)
+    console.log('addMessage: currentFriend', currentFriend.value)
+    console.log('addMessage: currentUser', currentUser.value)
+    
     const message: Message = {
       id: msg.id || '',
       sender_id: msg.from,
@@ -122,9 +132,13 @@ export const useChatStore = defineStore('chat', () => {
     const isTargetChat = (currentFriend.value && msg.from === currentFriend.value.id && msg.to_type === 0) ||
                         (currentGroup.value && msg.to === currentGroup.value.id && msg.to_type === 1)
     
+    console.log('addMessage: isTargetChat', isTargetChat)
+    
     if (isTargetChat) {
+      console.log('addMessage: adding to messages')
       messages.value.push(message)
     } else {
+      console.log('addMessage: adding to unreadCounts')
       if (msg.to_type === 0) {
         unreadCounts.value[msg.from] = (unreadCounts.value[msg.from] || 0) + 1
       } else {

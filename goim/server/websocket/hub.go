@@ -22,10 +22,10 @@ var upgrader = websocket.Upgrader{
 }
 
 type Client struct {
-	Hub      *Hub
-	Conn     *websocket.Conn
-	Send     chan []byte
-	UserID   string
+	Hub    *Hub
+	Conn   *websocket.Conn
+	Send   chan []byte
+	UserID string
 }
 
 type Hub struct {
@@ -63,18 +63,26 @@ func (h *Hub) Run() {
 }
 
 func (h *Hub) SendMessage(msg *model.WSMessage) {
+	log.Printf("SendMessage: from=%s, to=%s, toType=%d", msg.From, msg.To, msg.ToType)
+
 	if msg.ToType == 0 {
 		if client, ok := h.Clients[msg.To]; ok {
+			log.Printf("Sending to user %s, client found", msg.To)
 			select {
 			case client.Send <- serializeMessage(msg):
+				log.Printf("Message sent to %s", msg.To)
 			default:
+				log.Printf("Failed to send to %s, closing client", msg.To)
 				close(client.Send)
 				delete(h.Clients, client.UserID)
 			}
+		} else {
+			log.Printf("Client %s not found in hub", msg.To)
 		}
 	} else {
 		members, err := storage.GetGroupMembers(msg.To)
 		if err != nil {
+			log.Printf("Failed to get group members: %v", err)
 			return
 		}
 		for _, member := range members {
@@ -103,6 +111,8 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "userID is required", http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("WebSocket connection request from user: %s", userID)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -146,6 +156,8 @@ func (c *Client) ReadPump() {
 			break
 		}
 
+		log.Printf("Received message from %s: %s", c.UserID, string(message))
+
 		var wsMsg model.WSMessage
 		if err := json.Unmarshal(message, &wsMsg); err != nil {
 			log.Printf("Error parsing message: %v", err)
@@ -164,6 +176,8 @@ func (c *Client) ReadPump() {
 }
 
 func handleMessage(msg *model.WSMessage) {
+	log.Printf("handleMessage: from=%s, to=%s, toType=%d, content=%s", msg.From, msg.To, msg.ToType, msg.Content)
+
 	dbMsg := &model.Message{
 		ID:           uuid.New().String(),
 		SenderID:     msg.From,
@@ -177,6 +191,7 @@ func handleMessage(msg *model.WSMessage) {
 
 	err := storage.CreateMessage(dbMsg)
 	if err != nil {
+		log.Printf("Failed to save message: %v", err)
 		return
 	}
 
@@ -187,6 +202,7 @@ func handleMessage(msg *model.WSMessage) {
 	msg.ID = dbMsg.ID
 	msg.Timestamp = dbMsg.CreatedAt.Unix()
 	hub.Broadcast <- msg
+	log.Printf("Message broadcasted: id=%s, to=%s", msg.ID, msg.To)
 }
 
 func (c *Client) WritePump() {
