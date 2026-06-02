@@ -48,6 +48,7 @@ func (h *Hub) Run() {
 		case client := <-h.Register:
 			if existingClient, ok := h.Clients[client.UserID]; ok {
 				log.Printf("User %s already connected, closing old connection", client.UserID)
+				delete(h.Clients, client.UserID)
 				close(existingClient.Send)
 				existingClient.Conn.Close()
 			}
@@ -55,7 +56,7 @@ func (h *Hub) Run() {
 			cache.SetOnline(client.UserID)
 			log.Printf("User %s connected", client.UserID)
 		case client := <-h.Unregister:
-			if _, ok := h.Clients[client.UserID]; ok {
+			if existingClient, ok := h.Clients[client.UserID]; ok && existingClient == client {
 				delete(h.Clients, client.UserID)
 				close(client.Send)
 				cache.SetOffline(client.UserID)
@@ -77,9 +78,8 @@ func (h *Hub) SendMessage(msg *model.WSMessage) {
 			case client.Send <- serializeMessage(msg):
 				log.Printf("Message sent to %s", msg.To)
 			default:
-				log.Printf("Failed to send to %s, closing client", msg.To)
-				close(client.Send)
-				delete(h.Clients, client.UserID)
+				log.Printf("Failed to send to %s, removing client", msg.To)
+				h.safeRemoveClient(client)
 			}
 		} else {
 			log.Printf("Client %s not found in hub", msg.To)
@@ -111,12 +111,21 @@ func (h *Hub) SendMessage(msg *model.WSMessage) {
 					select {
 					case client.Send <- serializeMessage(msg):
 					default:
-						close(client.Send)
-						delete(h.Clients, client.UserID)
+						log.Printf("Failed to send to %s, removing client", userID)
+						h.safeRemoveClient(client)
 					}
 				}
 			}
 		}
+	}
+}
+
+func (h *Hub) safeRemoveClient(client *Client) {
+	if existingClient, ok := h.Clients[client.UserID]; ok && existingClient == client {
+		delete(h.Clients, client.UserID)
+		close(client.Send)
+		cache.SetOffline(client.UserID)
+		log.Printf("Client %s removed from hub", client.UserID)
 	}
 }
 
