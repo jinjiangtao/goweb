@@ -136,7 +136,9 @@ export const useChatStore = defineStore('chat', () => {
     try {
       const result = await api.getOnlineUsers(userId.value)
       onlineUsers.value = result || []
-      result.forEach((user: User) => addUserToMap(user))
+      if (result) {
+        result.forEach((user: User) => addUserToMap(user))
+      }
       console.log('Loaded online users:', onlineUsers.value.length)
     } catch (error) {
       console.error('Failed to load online users:', error)
@@ -247,7 +249,7 @@ export const useChatStore = defineStore('chat', () => {
   async function sendMessage(content: string, msgType: number = 0) {
     if (!currentUser.value) return
 
-    const target = currentFriend.value || currentGroup.value
+    const target = currentFriend.value || currentGroup.value || currentOwner.value
     if (!target) return
 
     const wsMsg: WSMessage = {

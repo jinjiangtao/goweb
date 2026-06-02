@@ -85,14 +85,29 @@ func (h *Hub) SendMessage(msg *model.WSMessage) {
 			log.Printf("Client %s not found in hub", msg.To)
 		}
 	} else {
-		members, err := storage.GetGroupMembers(msg.To)
+		groupMembers, err := storage.GetGroupMembers(msg.To)
 		if err != nil {
 			log.Printf("Failed to get group members: %v", err)
 			return
 		}
-		for _, member := range members {
-			if member.UserID != msg.From {
-				if client, ok := h.Clients[member.UserID]; ok {
+
+		ownerMembers, err := storage.GetOwnerMembers(msg.To)
+		if err != nil {
+			log.Printf("Failed to get owner members: %v", err)
+			return
+		}
+
+		members := make(map[string]bool)
+		for _, member := range groupMembers {
+			members[member.UserID] = true
+		}
+		for _, member := range ownerMembers {
+			members[member.UserID] = true
+		}
+
+		for userID := range members {
+			if userID != msg.From {
+				if client, ok := h.Clients[userID]; ok {
 					select {
 					case client.Send <- serializeMessage(msg):
 					default:
