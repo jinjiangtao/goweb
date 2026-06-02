@@ -21,6 +21,23 @@ export interface Group {
   owner_id: string
 }
 
+export interface Owner {
+  id: string
+  name: string
+  description: string
+  avatar: string
+  created_at: string
+}
+
+export interface OwnerMember {
+  id: string
+  owner_id: string
+  user_id: string
+  username: string
+  nickname: string
+  joined_at: string
+}
+
 export interface Message {
   id: string
   sender_id: string

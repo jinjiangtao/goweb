@@ -12,6 +12,11 @@ const nickname = ref('')
 const errorMessage = ref('')
 const avatarPreview = ref('')
 const avatarFile = ref<File | null>(null)
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+
+function handleAvatarClick() {
+  avatarInputRef.value?.click()
+}
 
 function handleAvatarChange(event: Event) {
   const target = event.target as HTMLInputElement
@@ -52,7 +57,7 @@ async function handleSubmit() {
           nickname: nickname.value 
         })
         // 然后登录获取token
-        const loginResult = await api.login({ username: username.value, password: password.value })
+        await api.login({ username: username.value, password: password.value })
         // 再上传头像
         const avatarResult = await api.uploadAvatar(user.id, avatarFile.value)
         avatarUrl = avatarResult.avatar
@@ -79,13 +84,14 @@ async function handleSubmit() {
       
       <div v-if="!isLogin" class="avatar-upload">
         <label>头像</label>
-        <div class="avatar-preview" v-if="avatarPreview">
+        <div class="avatar-preview" v-if="avatarPreview" @click="handleAvatarClick">
           <img :src="avatarPreview" alt="头像预览" />
         </div>
-        <div v-else class="avatar-placeholder">
+        <div v-else class="avatar-placeholder" @click="handleAvatarClick">
           点击选择头像
         </div>
         <input 
+          ref="avatarInputRef"
           type="file" 
           accept="image/*" 
           @change="handleAvatarChange" 

@@ -1,15 +1,18 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User, Group, Message, WSMessage } from '@/types'
+import type { User, Group, Message, WSMessage, Owner } from '@/types'
 import * as api from '@/api'
 
 export const useChatStore = defineStore('chat', () => {
   const currentUser = ref<User | null>(null)
   const currentFriend = ref<User | null>(null)
   const currentGroup = ref<Group | null>(null)
+  const currentOwner = ref<Owner | null>(null)
   const messages = ref<Message[]>([])
   const friends = ref<User[]>([])
   const groups = ref<Group[]>([])
+  const owners = ref<Owner[]>([])
+  const joinedOwners = ref<Owner[]>([])
   const onlineUsers = ref<(User & { is_friend: boolean })[]>([])
   const unreadCounts = ref<Record<string, number>>({})
   const userMap = ref<Record<string, User>>({})
@@ -34,6 +37,8 @@ export const useChatStore = defineStore('chat', () => {
     await loadFriends()
     await loadGroups()
     await loadOnlineUsers()
+    await loadOwners()
+    await loadJoinedOwners()
   }
 
   async function register(username: string, password: string, nickname: string, avatar: string = '') {
@@ -101,6 +106,31 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  async function loadOwners() {
+    try {
+      const result = await api.getAllOwners()
+      owners.value = result || []
+    } catch {
+      owners.value = []
+    }
+  }
+
+  async function loadJoinedOwners() {
+    if (!userId.value) return
+    try {
+      const result = await api.getOwnersByUserID(userId.value)
+      joinedOwners.value = result || []
+    } catch {
+      joinedOwners.value = []
+    }
+  }
+
+  async function joinOwner(ownerID: string) {
+    if (!userId.value) return
+    await api.joinOwner(ownerID, userId.value)
+    await loadJoinedOwners()
+  }
+
   async function loadOnlineUsers() {
     if (!userId.value) return
     try {
@@ -166,7 +196,15 @@ export const useChatStore = defineStore('chat', () => {
   function selectGroup(group: Group) {
     currentGroup.value = group
     currentFriend.value = null
+    currentOwner.value = null
     loadMessages(group.id, 1)
+  }
+
+  function selectOwner(owner: Owner) {
+    currentOwner.value = owner
+    currentFriend.value = null
+    currentGroup.value = null
+    loadMessages(owner.id, 1)
   }
 
   function addMessage(msg: WSMessage) {
@@ -188,7 +226,8 @@ export const useChatStore = defineStore('chat', () => {
     const isTargetChat = (currentFriend.value && 
                           ((msg.from === currentFriend.value.id && msg.to_type === 0) || 
                            (msg.to === currentFriend.value.id && msg.to_type === 0))) ||
-                        (currentGroup.value && msg.to === currentGroup.value.id && msg.to_type === 1)
+                        (currentGroup.value && msg.to === currentGroup.value.id && msg.to_type === 1) ||
+                        (currentOwner.value && msg.to === currentOwner.value.id && msg.to_type === 1)
     
     console.log('addMessage: isTargetChat', isTargetChat)
     
@@ -241,9 +280,12 @@ export const useChatStore = defineStore('chat', () => {
     currentUser,
     currentFriend,
     currentGroup,
+    currentOwner,
     messages,
     friends,
     groups,
+    owners,
+    joinedOwners,
     onlineUsers,
     unreadCounts,
     userMap,
@@ -257,11 +299,15 @@ export const useChatStore = defineStore('chat', () => {
     updateProfile,
     loadFriends,
     loadGroups,
+    loadOwners,
+    loadJoinedOwners,
+    joinOwner,
     loadOnlineUsers,
     refreshFriendsOnlineStatus,
     loadMessages,
     selectFriend,
     selectGroup,
+    selectOwner,
     addMessage,
     sendMessage,
     addFriend,

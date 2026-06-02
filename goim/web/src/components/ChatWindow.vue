@@ -2,7 +2,6 @@
 import { ref, nextTick, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { useWebSocket } from '@/composables/useWebSocket'
-import * as api from '@/api'
 
 const chatStore = useChatStore()
 const messageInput = ref('')
@@ -50,6 +49,7 @@ function insertEmoji(emoji: string) {
 async function handleImageUpload(event: Event) {
   const target = event.target as HTMLInputElement
   if (target.files && target.files[0] && chatStore.userId && chatStore.currentUser) {
+    const currentUser = chatStore.currentUser
     try {
       // 上传图片（复用头像上传接口，或者需要创建专门的消息图片上传接口）
       // 这里暂时直接发送图片URL，实际项目中应该有专门的消息图片上传接口
@@ -60,7 +60,7 @@ async function handleImageUpload(event: Event) {
         if (wsMsg) {
           const localMessage = {
             id: `temp-${Date.now()}`,
-            sender_id: chatStore.currentUser.id,
+            sender_id: currentUser.id,
             receiver_id: wsMsg.to,
             receiver_type: wsMsg.to_type,
             content: imageUrl,
@@ -81,13 +81,14 @@ async function handleImageUpload(event: Event) {
 
 async function handleSend() {
   if (!messageInput.value.trim() || !chatStore.currentUser) return
+  const currentUser = chatStore.currentUser
 
   const wsMsg = await chatStore.sendMessage(messageInput.value.trim())
   if (wsMsg) {
     console.log('Sending message via WebSocket:', wsMsg)
     const localMessage = {
       id: `temp-${Date.now()}`,
-      sender_id: chatStore.currentUser.id,
+      sender_id: currentUser.id,
       receiver_id: wsMsg.to,
       receiver_type: wsMsg.to_type,
       content: wsMsg.content,
@@ -108,26 +109,36 @@ function handleKeydown(e: KeyboardEvent) {
     handleSend()
   }
 }
+
+function openImage(url: string) {
+  window.open(url, '_blank')
+}
 </script>
 
 <template>
   <div class="chat-window">
-    <template v-if="chatStore.currentFriend || chatStore.currentGroup">
+    <template v-if="chatStore.currentFriend || chatStore.currentGroup || chatStore.currentOwner">
       <div class="chat-header">
         <div class="avatar">
           <img 
-            v-if="chatStore.currentFriend?.avatar || chatStore.currentGroup?.avatar" 
-            :src="chatStore.currentFriend?.avatar || chatStore.currentGroup?.avatar" 
+            v-if="chatStore.currentFriend?.avatar || chatStore.currentGroup?.avatar || chatStore.currentOwner?.avatar" 
+            :src="chatStore.currentFriend?.avatar || chatStore.currentGroup?.avatar || chatStore.currentOwner?.avatar" 
             alt="头像"
           />
           <span v-else>
-            {{ getInitials(chatStore.currentFriend?.nickname || chatStore.currentGroup?.name || '') }}
+            {{ getInitials(chatStore.currentFriend?.nickname || chatStore.currentGroup?.name || chatStore.currentOwner?.name || '') }}
           </span>
         </div>
         <div>
-          <h4>{{ chatStore.currentFriend?.nickname || chatStore.currentGroup?.name }}</h4>
+          <div class="chat-title">
+            <h4>{{ chatStore.currentFriend?.nickname || chatStore.currentGroup?.name || chatStore.currentOwner?.name }}</h4>
+            <span v-if="chatStore.currentOwner" class="owner-badge">官方群主</span>
+          </div>
           <p v-if="chatStore.currentFriend">
             {{ chatStore.currentFriend.online ? '在线' : '离线' }}
+          </p>
+          <p v-if="chatStore.currentOwner">
+            {{ chatStore.currentOwner.description }}
           </p>
         </div>
       </div>
@@ -150,7 +161,7 @@ function handleKeydown(e: KeyboardEvent) {
             <div class="message-sender">{{ chatStore.getNickname(msg.sender_id) }}</div>
             <div class="message-bubble">
               <template v-if="msg.type === 1">
-                <img :src="msg.content" class="message-image" @click="window.open(msg.content, '_blank')" />
+                <img :src="msg.content" class="message-image" @click="openImage(msg.content)" />
               </template>
               <template v-else>
                 {{ msg.content }}
@@ -309,5 +320,20 @@ function handleKeydown(e: KeyboardEvent) {
 .upload-btn:hover {
   background: #f0f0f0;
   border-radius: 50%;
+}
+
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.owner-badge {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
 }
 </style>

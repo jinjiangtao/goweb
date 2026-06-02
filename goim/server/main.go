@@ -56,6 +56,16 @@ func main() {
 			group.GET("/members/:groupID", handler.GetGroupMembers)
 		}
 
+		owner := api.Group("/owner")
+		{
+			owner.GET("/list", handler.GetAllOwners)
+			owner.GET("/:ownerID", handler.GetOwnerByID)
+			owner.GET("/user/:userID", handler.GetOwnersByUserID)
+			owner.GET("/members/:ownerID", handler.GetOwnerMembers)
+			owner.POST("/join", handler.JoinOwner)
+			owner.POST("/leave", handler.LeaveOwner)
+		}
+
 		message := api.Group("/message")
 		{
 			message.GET("/history", handler.GetMessageHistory)
@@ -69,6 +79,11 @@ func main() {
 			admin.Use(handler.AdminAuthMiddleware())
 			admin.GET("/users", handler.GetAllUsers)
 			admin.GET("/messages", handler.GetAllMessages)
+
+			// Admin Owner API
+			admin.POST("/owner/create", handler.CreateOwner)
+			admin.DELETE("/owner/:ownerID", handler.DeleteOwner)
+			admin.POST("/owner/remove-member", handler.RemoveOwnerMember)
 		}
 	}
 

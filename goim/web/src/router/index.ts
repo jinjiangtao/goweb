@@ -2,11 +2,6 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/',
-    name: 'Chat',
-    component: () => import('../App.vue'),
-  },
-  {
     path: '/admin',
     name: 'AdminLogin',
     component: () => import('../views/AdminLogin.vue'),
@@ -20,6 +15,11 @@ const routes: RouteRecordRaw[] = [
     path: '/admin/messages',
     name: 'AdminMessages',
     component: () => import('../views/AdminMessages.vue'),
+  },
+  {
+    path: '/admin/owners',
+    name: 'AdminOwners',
+    component: () => import('../views/AdminOwners.vue'),
   },
 ]
 

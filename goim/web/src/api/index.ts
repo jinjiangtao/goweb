@@ -164,3 +164,53 @@ export async function getAdminMessages(page = 1, pageSize = 20, token: string): 
   })
   return response.data
 }
+
+// Owner APIs
+import type { Owner, OwnerMember } from '@/types'
+
+export async function createOwner(name: string, description: string, avatar: string, token: string): Promise<Owner> {
+  const response = await api.post('/admin/owner/create', { name, description, avatar }, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  return response.data
+}
+
+export async function getAllOwners(): Promise<Owner[]> {
+  const response = await api.get('/owner/list')
+  return response.data
+}
+
+export async function getOwnerByID(ownerID: string): Promise<Owner> {
+  const response = await api.get(`/owner/${ownerID}`)
+  return response.data
+}
+
+export async function getOwnersByUserID(userID: string): Promise<Owner[]> {
+  const response = await api.get(`/owner/user/${userID}`)
+  return response.data
+}
+
+export async function getOwnerMembers(ownerID: string): Promise<OwnerMember[]> {
+  const response = await api.get(`/owner/members/${ownerID}`)
+  return response.data
+}
+
+export async function joinOwner(ownerID: string, userID: string): Promise<void> {
+  await api.post('/owner/join', { owner_id: ownerID, user_id: userID })
+}
+
+export async function leaveOwner(ownerID: string, userID: string): Promise<void> {
+  await api.post('/owner/leave', { owner_id: ownerID, user_id: userID })
+}
+
+export async function deleteOwner(ownerID: string, token: string): Promise<void> {
+  await api.delete(`/admin/owner/${ownerID}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+}
+
+export async function removeOwnerMember(ownerID: string, userID: string, token: string): Promise<void> {
+  await api.post('/admin/owner/remove-member', { owner_id: ownerID, user_id: userID }, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+}

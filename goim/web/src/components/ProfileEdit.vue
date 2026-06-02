@@ -16,6 +16,7 @@ const avatarPreview = ref('')
 const avatarFile = ref<File | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
+const avatarInputRef = ref<HTMLInputElement | null>(null)
 
 watch(() => props.visible, (newVal) => {
   if (newVal && chatStore.currentUser) {
@@ -23,6 +24,10 @@ watch(() => props.visible, (newVal) => {
     avatarPreview.value = chatStore.currentUser.avatar || ''
   }
 })
+
+function handleAvatarClick() {
+  avatarInputRef.value?.click()
+}
 
 function handleAvatarChange(event: Event) {
   const target = event.target as HTMLInputElement
@@ -77,20 +82,20 @@ function handleClose() {
       <div class="modal-body">
         <div class="avatar-edit">
           <label>头像</label>
-          <div class="avatar-preview" v-if="avatarPreview">
+          <div class="avatar-preview" v-if="avatarPreview" @click="handleAvatarClick">
             <img :src="avatarPreview" alt="头像预览" />
           </div>
-          <div v-else class="avatar-placeholder">
+          <div v-else class="avatar-placeholder" @click="handleAvatarClick">
             点击选择头像
           </div>
           <input 
+            ref="avatarInputRef"
             type="file" 
             accept="image/*" 
             @change="handleAvatarChange" 
             class="avatar-input"
-            id="avatar-input"
           />
-          <label for="avatar-input" class="change-avatar-btn">更换头像</label>
+          <label class="change-avatar-btn" @click="handleAvatarClick">更换头像</label>
         </div>
 
         <div class="form-group">

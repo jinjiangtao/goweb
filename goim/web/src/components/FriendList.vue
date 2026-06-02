@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useChatStore } from '@/stores/chat'
-import type { User, Group } from '@/types'
+import type { User, Group, Owner } from '@/types'
 import ProfileEdit from './ProfileEdit.vue'
 
 const chatStore = useChatStore()
@@ -45,9 +45,38 @@ function selectGroup(group: Group) {
   chatStore.selectGroup(group)
 }
 
+function selectOwner(owner: Owner) {
+  chatStore.selectOwner(owner)
+}
+
 async function handleAddFriend(user: User & { is_friend: boolean }) {
   await chatStore.addFriend(user.id)
 }
+
+async function handleJoinOwner(owner: Owner) {
+  await chatStore.joinOwner(owner.id)
+}
+
+const filteredOwners = computed(() => {
+  const unjoinedOwners = chatStore.owners.filter(o => 
+    !chatStore.joinedOwners.some(jo => jo.id === o.id)
+  )
+  if (!searchQuery.value) return unjoinedOwners
+  const query = searchQuery.value.toLowerCase()
+  return unjoinedOwners.filter(o => 
+    o.name.toLowerCase().includes(query) || 
+    o.description.toLowerCase().includes(query)
+  )
+})
+
+const filteredJoinedOwners = computed(() => {
+  if (!searchQuery.value) return chatStore.joinedOwners
+  const query = searchQuery.value.toLowerCase()
+  return chatStore.joinedOwners.filter(o => 
+    o.name.toLowerCase().includes(query) || 
+    o.description.toLowerCase().includes(query)
+  )
+})
 </script>
 
 <template>
@@ -154,8 +183,69 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
           </div>
         </div>
       </div>
+
+      <div v-if="filteredJoinedOwners.length > 0">
+        <div class="group-list">
+          <h5>群主群聊</h5>
+        </div>
+        <div 
+          v-for="owner in filteredJoinedOwners" 
+          :key="owner.id"
+          class="friend-item owner-item"
+          :class="{ active: chatStore.currentOwner?.id === owner.id }"
+          @click="selectOwner(owner)"
+        >
+          <div class="avatar">
+            <img v-if="owner.avatar" :src="owner.avatar" alt="头像" />
+            <span v-else>{{ getInitials(owner.name) }}</span>
+          </div>
+          <div class="friend-info">
+            <div class="owner-name">
+              <h4>{{ owner.name }}</h4>
+              <span class="official-badge">官方</span>
+            </div>
+            <p>{{ owner.description || '群主' }}</p>
+          </div>
+          <div class="friend-status">
+            <span v-if="chatStore.unreadCounts[owner.id]" class="unread-badge">
+              {{ chatStore.unreadCounts[owner.id] }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="filteredOwners.length > 0">
+        <div class="group-list">
+          <h5>官方群主</h5>
+        </div>
+        <div 
+          v-for="owner in filteredOwners" 
+          :key="owner.id"
+          class="friend-item owner-item"
+        >
+          <div class="avatar">
+            <img v-if="owner.avatar" :src="owner.avatar" alt="头像" />
+            <span v-else>{{ getInitials(owner.name) }}</span>
+          </div>
+          <div class="friend-info">
+            <div class="owner-name">
+              <h4>{{ owner.name }}</h4>
+              <span class="official-badge">官方</span>
+            </div>
+            <p>{{ owner.description || '群主' }}</p>
+          </div>
+          <div class="friend-status">
+            <button 
+              class="join-owner-btn"
+              @click="handleJoinOwner(owner)"
+            >
+              加入
+            </button>
+          </div>
+        </div>
+      </div>
       
-      <div v-if="filteredOnlineUsers.length === 0 && filteredFriends.length === 0 && filteredGroups.length === 0" class="empty-chat">
+      <div v-if="filteredOnlineUsers.length === 0 && filteredFriends.length === 0 && filteredGroups.length === 0 && filteredJoinedOwners.length === 0 && filteredOwners.length === 0" class="empty-chat">
         {{ searchQuery ? '未找到匹配的联系人' : '暂无联系人' }}
       </div>
     </div>
@@ -179,8 +269,42 @@ async function handleAddFriend(user: User & { is_friend: boolean }) {
   background: #764ba2;
 }
 
+.join-owner-btn {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.join-owner-btn:hover {
+  background: #059669;
+}
+
 .user-info {
   cursor: pointer;
+}
+
+.owner-item {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+}
+
+.owner-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.official-badge {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 500;
 }
 
 .user-info:hover {

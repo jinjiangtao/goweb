@@ -89,6 +89,22 @@ func createTables() {
 			FOREIGN KEY(user_id) REFERENCES users(id),
 			FOREIGN KEY(message_id) REFERENCES messages(id)
 		)`,
+		`CREATE TABLE IF NOT EXISTS owners (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			description TEXT,
+			avatar TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS owner_members (
+			id TEXT PRIMARY KEY,
+			owner_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY(owner_id) REFERENCES owners(id),
+			FOREIGN KEY(user_id) REFERENCES users(id),
+			UNIQUE(owner_id, user_id)
+		)`,
 	}
 
 	for _, query := range queries {
@@ -395,4 +411,112 @@ func GetAllUsers(limit, offset int) ([]*model.User, int, error) {
 	}
 
 	return users, total, nil
+}
+
+func CreateOwner(owner *model.Owner) error {
+	_, err := db.Exec(`INSERT INTO owners (id, name, description, avatar, created_at) 
+		VALUES (?, ?, ?, ?, ?)`,
+		owner.ID, owner.Name, owner.Description, owner.Avatar, owner.CreatedAt)
+	return err
+}
+
+func GetOwnerByID(id string) (*model.Owner, error) {
+	owner := &model.Owner{}
+	err := db.QueryRow(`SELECT id, name, description, avatar, created_at FROM owners WHERE id = ?`, id).Scan(
+		&owner.ID, &owner.Name, &owner.Description, &owner.Avatar, &owner.CreatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return owner, err
+}
+
+func GetAllOwners() ([]*model.Owner, error) {
+	rows, err := db.Query(`SELECT id, name, description, avatar, created_at FROM owners ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var owners []*model.Owner
+	for rows.Next() {
+		o := &model.Owner{}
+		err := rows.Scan(&o.ID, &o.Name, &o.Description, &o.Avatar, &o.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		owners = append(owners, o)
+	}
+	return owners, nil
+}
+
+func DeleteOwner(ownerID string) error {
+	_, err := db.Exec(`DELETE FROM owners WHERE id = ?`, ownerID)
+	return err
+}
+
+func CreateOwnerMember(member *model.OwnerMember) error {
+	_, err := db.Exec(`INSERT INTO owner_members (id, owner_id, user_id, joined_at) 
+		VALUES (?, ?, ?, ?)`,
+		member.ID, member.OwnerID, member.UserID, member.JoinedAt)
+	return err
+}
+
+func RemoveOwnerMember(ownerID, userID string) error {
+	_, err := db.Exec(`DELETE FROM owner_members WHERE owner_id = ? AND user_id = ?`, ownerID, userID)
+	return err
+}
+
+func RemoveAllOwnerMembers(ownerID string) error {
+	_, err := db.Exec(`DELETE FROM owner_members WHERE owner_id = ?`, ownerID)
+	return err
+}
+
+func GetOwnerMembers(ownerID string) ([]*model.OwnerMember, error) {
+	rows, err := db.Query(`SELECT id, owner_id, user_id, joined_at FROM owner_members WHERE owner_id = ?`, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []*model.OwnerMember
+	for rows.Next() {
+		m := &model.OwnerMember{}
+		err := rows.Scan(&m.ID, &m.OwnerID, &m.UserID, &m.JoinedAt)
+		if err != nil {
+			return nil, err
+		}
+		members = append(members, m)
+	}
+	return members, nil
+}
+
+func CheckOwnerMember(ownerID, userID string) (bool, error) {
+	var count int
+	err := db.QueryRow(`SELECT COUNT(*) FROM owner_members WHERE owner_id = ? AND user_id = ?`, ownerID, userID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func GetOwnersByUserID(userID string) ([]*model.Owner, error) {
+	rows, err := db.Query(`SELECT o.id, o.name, o.description, o.avatar, o.created_at 
+		FROM owners o 
+		JOIN owner_members om ON o.id = om.owner_id 
+		WHERE om.user_id = ?`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var owners []*model.Owner
+	for rows.Next() {
+		o := &model.Owner{}
+		err := rows.Scan(&o.ID, &o.Name, &o.Description, &o.Avatar, &o.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		owners = append(owners, o)
+	}
+	return owners, nil
 }

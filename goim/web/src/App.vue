@@ -10,7 +10,7 @@ import type { WSMessage } from './types'
 
 const route = useRoute()
 const chatStore = useChatStore()
-const { sendMessage, connect, onMessage, disconnect, connected, removeMessageHandler } = useWebSocket()
+const { connect, onMessage, disconnect, removeMessageHandler } = useWebSocket()
 
 const wsInitialized = ref(false)
 let refreshInterval: ReturnType<typeof setInterval> | null = null
@@ -80,13 +80,29 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <router-view />
-  <template v-if="!isAdminPage">
-    <LoginPage v-if="!chatStore.isLoggedIn" />
+  <div id="app-root">
+    <!-- 只在管理页面时显示 router-view -->
+    <template v-if="isAdminPage">
+      <router-view />
+    </template>
     
-    <div v-else class="chat-container">
-      <FriendList />
-      <ChatWindow />
-    </div>
-  </template>
+    <!-- 聊天界面 -->
+    <template v-else>
+      <!-- 未登录时显示登录页面 -->
+      <LoginPage v-if="!chatStore.isLoggedIn" />
+      
+      <!-- 已登录时显示聊天界面 -->
+      <div v-else class="chat-container">
+        <FriendList />
+        <ChatWindow />
+      </div>
+    </template>
+  </div>
 </template>
+
+<style scoped>
+#app-root {
+  width: 100%;
+  height: 100vh;
+}
+</style>
