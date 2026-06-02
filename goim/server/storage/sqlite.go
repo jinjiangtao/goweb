@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"goim/server/model"
+	"log"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -491,8 +492,10 @@ func GetOwnerMembers(ownerID string) ([]*model.OwnerMember, error) {
 }
 
 func CheckOwnerMember(ownerID, userID string) (bool, error) {
+	log.Printf("CheckOwnerMember SQL: ownerID=%q, userID=%q", ownerID, userID)
 	var count int
 	err := db.QueryRow(`SELECT COUNT(*) FROM owner_members WHERE owner_id = ? AND user_id = ?`, ownerID, userID).Scan(&count)
+	log.Printf("CheckOwnerMember result: count=%d, err=%v", count, err)
 	if err != nil {
 		return false, err
 	}

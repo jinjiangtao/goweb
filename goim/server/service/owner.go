@@ -4,15 +4,16 @@ import (
 	"errors"
 	"goim/server/model"
 	"goim/server/storage"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 var (
-	ErrOwnerExists     = errors.New("owner already exists")
+	ErrOwnerExists       = errors.New("owner already exists")
 	ErrOwnerMemberExists = errors.New("member already joined")
-	ErrOwnerNotFound   = errors.New("owner not found")
+	ErrOwnerNotFound     = errors.New("owner not found")
 )
 
 func CreateOwner(name, description, avatar string) (*model.Owner, error) {
@@ -58,7 +59,9 @@ func DeleteOwner(ownerID string) error {
 }
 
 func JoinOwner(ownerID, userID string) error {
+	log.Printf("CheckOwnerMember: ownerID=%s, userID=%s", ownerID, userID)
 	exists, err := storage.CheckOwnerMember(ownerID, userID)
+	log.Printf("CheckOwnerMember result: exists=%v, err=%v", exists, err)
 	if err != nil {
 		return err
 	}

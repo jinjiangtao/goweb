@@ -2,6 +2,7 @@ package handler
 
 import (
 	"goim/server/service"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -114,8 +115,11 @@ func JoinOwner(c *gin.Context) {
 		return
 	}
 
+	log.Printf("JoinOwner request: ownerID=%s, userID=%s", req.OwnerID, req.UserID)
+
 	err := service.JoinOwner(req.OwnerID, req.UserID)
 	if err != nil {
+		log.Printf("JoinOwner error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -185,7 +189,7 @@ func RemoveOwnerMember(c *gin.Context) {
 }
 
 func GetOwnersByUserID(c *gin.Context) {
-	userID := c.Query("user_id")
+	userID := c.Param("userID")
 	if userID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
 		return
