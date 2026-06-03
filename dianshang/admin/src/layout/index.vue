@@ -46,7 +46,7 @@
     <main class="main-content">
       <header class="header">
         <button class="collapse-btn" @click="toggleSidebar">
-          <el-icon><Menu v-if="isCollapsed" /><MenuFold v-else /></el-icon>
+          <el-icon><Menu v-if="isCollapsed" /><Fold v-else /></el-icon>
         </button>
         <el-breadcrumb separator="/">
           <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path" :to="item.path">
@@ -64,7 +64,7 @@
 </template>
 
 <script setup>import { ref, computed, onMounted } from 'vue';
-import { Menu, MenuFold, User, Settings, Lock } from '@element-plus/icons-vue';
+import { Menu, Fold, User, Settings, Lock } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { logout } from '../api';
 import { ElMessage } from 'element-plus';

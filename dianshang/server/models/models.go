@@ -43,9 +43,9 @@ type RoleMenu struct {
 
 func InitDB() {
 	var err error
-	DB, err = gorm.Open("sqlite3", "ecommerce.db")
+	DB, err = gorm.Open("sqlite", "file:ecommerce.db?mode=rwc")
 	if err != nil {
-		panic("failed to connect database")
+		panic("failed to connect database: " + err.Error())
 	}
 	DB.AutoMigrate(&AdminUser{}, &Menu{}, &RoleMenu{})
 }
