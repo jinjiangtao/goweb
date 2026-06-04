@@ -40,6 +40,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	models.DB.Model(&user).Update("last_login_at", time.Now())
+	models.InitDefaultMenusIfNotExists()
 	menus := GetMenuTreeByRole(user.Role)
 	c.JSON(http.StatusOK, gin.H{"code": 200, "message": "登录成功", "data": gin.H{"token": token, "user": user, "menus": menus}})
 }

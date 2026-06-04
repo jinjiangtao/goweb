@@ -71,10 +71,19 @@ func InitSuperAdmin() {
 			fmt.Printf("创建用户失败: %v\n", result.Error)
 		} else {
 			fmt.Printf("用户创建成功，ID: %d\n", newAdmin.ID)
-			InitDefaultMenus()
 		}
 	} else {
 		fmt.Printf("超级管理员已存在，用户名: %s\n", admin.Username)
+	}
+	InitDefaultMenusIfNotExists()
+}
+
+func InitDefaultMenusIfNotExists() {
+	var count int
+	DB.Model(&Menu{}).Count(&count)
+	if count == 0 {
+		fmt.Println("菜单不存在，初始化默认菜单...")
+		InitDefaultMenus()
 	}
 }
 

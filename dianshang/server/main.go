@@ -9,5 +9,5 @@ func main() {
 	models.InitDB()
 	models.InitSuperAdmin()
 	r := routes.SetupRouter()
-	r.Run(":8081")
+	r.Run(":8080")
 }

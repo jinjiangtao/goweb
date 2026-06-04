@@ -15,15 +15,26 @@ func GetMenus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": 200, "data": tree})
 }
 
-func BuildMenuTree(menus []models.Menu, parentID uint) []models.Menu {
+func BuildMenuTree(menus []models.Menu, rootParentID uint) []models.Menu {
 	tree := []models.Menu{}
 	for _, menu := range menus {
-		if menu.ParentID == parentID {
-			menu.Children = BuildMenuTree(menus, menu.ID)
+		if menu.ParentID == rootParentID {
+			menu.Children = getChildren(menus, menu.ID)
 			tree = append(tree, menu)
 		}
 	}
 	return tree
+}
+
+func getChildren(menus []models.Menu, parentID uint) []models.Menu {
+	children := []models.Menu{}
+	for _, menu := range menus {
+		if menu.ParentID == parentID && menu.ID != parentID {
+			menu.Children = getChildren(menus, menu.ID)
+			children = append(children, menu)
+		}
+	}
+	return children
 }
 
 func GetMenuTreeByRole(role string) []models.Menu {
