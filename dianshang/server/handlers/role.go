@@ -49,7 +49,7 @@ func getAllMenuIDs(menus []models.Menu) []uint {
 func BuildMenuTreeWithChecked(menus []models.Menu, parentID uint, checkedIDs []uint) []models.Menu {
 	tree := []models.Menu{}
 	for _, menu := range menus {
-		if menu.ParentID == parentID {
+		if menu.ParentID == parentID && menu.ID != parentID {
 			menu.Children = BuildMenuTreeWithChecked(menus, menu.ID, checkedIDs)
 			tree = append(tree, menu)
 		}

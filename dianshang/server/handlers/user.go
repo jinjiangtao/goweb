@@ -27,14 +27,28 @@ func GetUsers(c *gin.Context) {
 }
 
 func CreateUser(c *gin.Context) {
-	var user models.AdminUser
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		Nickname string `json:"nickname"`
+		Role     string `json:"role"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数错误"})
 		return
 	}
-	if user.Username == "" || user.Password == "" {
+	if req.Username == "" || req.Password == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "用户名和密码不能为空"})
 		return
+	}
+	var user models.AdminUser
+	user.Username = req.Username
+	user.Password = req.Password
+	user.Nickname = req.Nickname
+	if req.Role != "" {
+		user.Role = req.Role
+	} else {
+		user.Role = "operator"
 	}
 	hashedPassword, err := models.GeneratePasswordHash(user.Password)
 	if err != nil {
