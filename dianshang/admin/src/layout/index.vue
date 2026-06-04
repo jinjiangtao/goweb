@@ -64,7 +64,7 @@
 </template>
 
 <script setup>import { ref, computed, onMounted } from 'vue';
-import { Menu, Fold, User, Settings, Lock } from '@element-plus/icons-vue';
+import { Menu, Fold, User, Setting, Lock } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { logout } from '../api';
 import { ElMessage } from 'element-plus';
@@ -81,7 +81,7 @@ const iconMap = {
  lock: Lock
 };
 const getIcon = (iconName) => {
- return iconMap[iconName] || Settings;
+ return iconMap[iconName] || Setting;
 };
 const toggleSidebar = () => {
  isCollapsed.value = !isCollapsed.value;
