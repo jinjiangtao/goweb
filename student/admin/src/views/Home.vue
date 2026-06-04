@@ -10,7 +10,7 @@
           <span>报名列表</span>
         </el-menu-item>
         <el-menu-item index="2" @click="navigate('/stats')">
-          <el-icon><component :is="BarChart3" /></el-icon>
+          <el-icon><component :is="DataAnalysis" /></el-icon>
           <span>统计看板</span>
         </el-menu-item>
       </el-menu>
@@ -29,7 +29,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { List, BarChart3 } from '@element-plus/icons-vue'
+import { List, DataAnalysis } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
