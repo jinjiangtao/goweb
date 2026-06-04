@@ -51,23 +51,33 @@ func InitDB() {
 }
 
 func InitSuperAdmin() {
-	var count int
-	DB.Model(&AdminUser{}).Count(&count)
-	if count == 0 {
+	var admin AdminUser
+	DB.Where("username = ?", "admin").First(&admin)
+	
+	if admin.ID == 0 {
+		fmt.Println("创建超级管理员...")
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
-		superAdmin := AdminUser{
+		newAdmin := AdminUser{
 			Username: "admin",
 			Password: string(hashedPassword),
 			Nickname: "超级管理员",
 			Role:     "super",
 			Status:   1,
 		}
-		DB.Create(&superAdmin)
-		InitDefaultMenus()
+		result := DB.Create(&newAdmin)
+		if result.Error != nil {
+			fmt.Printf("创建用户失败: %v\n", result.Error)
+		} else {
+			fmt.Printf("用户创建成功，ID: %d\n", newAdmin.ID)
+			InitDefaultMenus()
+		}
+	} else {
+		fmt.Printf("超级管理员已存在，ID: %d\n", admin.ID)
 	}
 }
 
 func InitDefaultMenus() {
+	fmt.Println("创建默认菜单...")
 	menus := []Menu{
 		{Name: "管理员管理", Path: "/admin/users", Icon: "user", Sort: 1, Visible: 1, ParentID: 0},
 		{Name: "菜单管理", Path: "/admin/menus", Icon: "menu", Sort: 2, Visible: 1, ParentID: 0},
