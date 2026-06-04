@@ -1,10 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+const safeParse = (str, defaultValue) => {
+  if (!str || str === 'undefined') {
+    return defaultValue
+  }
+  try {
+    return JSON.parse(str)
+  } catch {
+    return defaultValue
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
-  const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
-  const menus = ref(JSON.parse(localStorage.getItem('menus') || '[]'))
+  const user = ref(safeParse(localStorage.getItem('user'), null))
+  const menus = ref(safeParse(localStorage.getItem('menus'), []))
 
   function setToken(val) {
     token.value = val

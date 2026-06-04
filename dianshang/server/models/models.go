@@ -81,7 +81,7 @@ func InitSuperAdmin() {
 func InitDefaultMenus() {
 	fmt.Println("创建默认菜单...")
 	menus := []Menu{
-		{Name: "管理员管理", Path: "/admin/users", Icon: "user", Sort: 1, Visible: 1, ParentID: 0},
+		{Name: "用户管理", Path: "/admin/users", Icon: "user", Sort: 1, Visible: 1, ParentID: 0},
 		{Name: "菜单管理", Path: "/admin/menus", Icon: "menu", Sort: 2, Visible: 1, ParentID: 0},
 		{Name: "角色权限", Path: "/admin/roles", Icon: "lock", Sort: 3, Visible: 1, ParentID: 0},
 	}

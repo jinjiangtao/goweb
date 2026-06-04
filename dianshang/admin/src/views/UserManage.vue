@@ -61,7 +61,7 @@
   </div>
 </template>
 
-<script setup>import { ref, reactive, onMounted } from 'vue';
+<script setup>import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getUsers, createUser, updateUser, deleteUser, updateUserStatus, resetPassword } from '../api';
 const userList = ref([]);
@@ -84,12 +84,12 @@ const form = reactive({
  password: '',
  role: 'admin'
 });
-const rules = {
+const rules = computed(() => ({
  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
  nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
- password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+ password: isEdit.value ? [] : [{ required: true, message: '请输入密码', trigger: 'blur' }],
  role: [{ required: true, message: '请选择角色', trigger: 'change' }]
-};
+}));
 const roleMap = {
  super: '超级管理员',
  admin: '管理员',

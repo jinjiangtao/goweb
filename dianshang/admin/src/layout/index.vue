@@ -9,13 +9,13 @@
           <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="String(menu.id)">
             <template #title>
               <el-icon><component :is="getIcon(menu.icon)" /></el-icon>
-              <span>{{ menu.name }}</span>
+              <span>{{ getMenuName(menu.name) }}</span>
             </template>
             <template v-for="child in menu.children" :key="child.id">
               <el-sub-menu v-if="child.children && child.children.length > 0" :index="String(child.id)">
                 <template #title>
                   <el-icon><component :is="getIcon(child.icon)" /></el-icon>
-                  <span>{{ child.name }}</span>
+                  <span>{{ getMenuName(child.name) }}</span>
                 </template>
                 <el-menu-item
                   v-for="grandchild in child.children"
@@ -23,7 +23,7 @@
                   :index="grandchild.path"
                   @click="handleMenuClick(grandchild.path)"
                 >
-                  <span>{{ grandchild.name }}</span>
+                  <span>{{ getMenuName(grandchild.name) }}</span>
                 </el-menu-item>
               </el-sub-menu>
               <el-menu-item
@@ -32,13 +32,13 @@
                 @click="handleMenuClick(child.path)"
               >
                 <el-icon><component :is="getIcon(child.icon)" /></el-icon>
-                <span>{{ child.name }}</span>
+                <span>{{ getMenuName(child.name) }}</span>
               </el-menu-item>
             </template>
           </el-sub-menu>
           <el-menu-item v-else :index="menu.path" @click="handleMenuClick(menu.path)">
             <el-icon><component :is="getIcon(menu.icon)" /></el-icon>
-            <span>{{ menu.name }}</span>
+            <span>{{ getMenuName(menu.name) }}</span>
           </el-menu-item>
         </template>
       </el-menu>
@@ -82,6 +82,12 @@ const iconMap = {
 };
 const getIcon = (iconName) => {
  return iconMap[iconName] || Setting;
+};
+const getMenuName = (name) => {
+ if (name === '管理员管理') {
+ return '用户管理';
+ }
+ return name;
 };
 const toggleSidebar = () => {
  isCollapsed.value = !isCollapsed.value;
@@ -180,6 +186,12 @@ onMounted(() => {
   font-size: 20px;
   cursor: pointer;
   margin-right: 20px;
+  padding: 8px;
+  color: #666;
+  transition: color 0.2s;
+}
+.collapse-btn:hover {
+  color: #1890ff;
 }
 .header-right {
   margin-left: auto;
