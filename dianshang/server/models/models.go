@@ -47,14 +47,16 @@ func InitDB() {
 	if err != nil {
 		panic("failed to connect database: " + err.Error())
 	}
-	DB.AutoMigrate(&AdminUser{}, &Menu{}, &RoleMenu{})
+	DB.CreateTable(&AdminUser{})
+	DB.CreateTable(&Menu{})
+	DB.CreateTable(&RoleMenu{})
 }
 
 func InitSuperAdmin() {
 	var admin AdminUser
 	DB.Where("username = ?", "admin").First(&admin)
 	
-	if admin.ID == 0 {
+	if admin.Username != "admin" {
 		fmt.Println("创建超级管理员...")
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
 		newAdmin := AdminUser{
@@ -72,7 +74,7 @@ func InitSuperAdmin() {
 			InitDefaultMenus()
 		}
 	} else {
-		fmt.Printf("超级管理员已存在，ID: %d\n", admin.ID)
+		fmt.Printf("超级管理员已存在，用户名: %s\n", admin.Username)
 	}
 }
 

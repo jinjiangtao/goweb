@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"net/http"
 	"server/models"
 	"server/utils"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +22,7 @@ func Login(c *gin.Context) {
 	}
 	var user models.AdminUser
 	models.DB.Where("username = ?", req.Username).First(&user)
-	if user.ID == 0 {
+	if user.Username == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户名或密码错误"})
 		return
 	}
