@@ -12,7 +12,7 @@
       </div>
       <div class="stat-card approved">
         <div class="stat-icon">
-          <el-icon><CheckCircle /></el-icon>
+          <el-icon><CircleCheck /></el-icon>
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.approved }}</div>
@@ -21,7 +21,7 @@
       </div>
       <div class="stat-card rejected">
         <div class="stat-icon">
-          <el-icon><XCircle /></el-icon>
+          <el-icon><CircleClose /></el-icon>
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.rejected }}</div>
@@ -47,7 +47,7 @@
 
 <script setup>import { reactive, onMounted } from 'vue';
 import axios from 'axios';
-import { Clock, CheckCircle, XCircle } from '@element-plus/icons-vue';
+import { Clock, CircleCheck, CircleClose } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 const stats = reactive({
  pending: 0,
