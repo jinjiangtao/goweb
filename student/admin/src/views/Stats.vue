@@ -40,12 +40,15 @@
           <div class="bar" :style="{ height: item.count * 10 + 'px' }"></div>
           <div class="bar-label">{{ item.date }}</div>
         </div>
+        <div v-if="dailyData.length === 0" class="empty-chart">
+          <p>暂无数据</p>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>import { reactive, onMounted } from 'vue';
+<script setup>import { reactive, ref, onMounted } from 'vue';
 import axios from 'axios';
 import { Clock, CircleCheck, CircleClose } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
@@ -54,15 +57,7 @@ const stats = reactive({
  approved: 0,
  rejected: 0
 });
-const dailyData = reactive([
- { date: '06-01', count: 5 },
- { date: '06-02', count: 8 },
- { date: '06-03', count: 12 },
- { date: '06-04', count: 6 },
- { date: '06-05', count: 10 },
- { date: '06-06', count: 7 },
- { date: '06-07', count: 15 }
-]);
+const dailyData = ref([]);
 const loadStats = async () => {
  try {
  const response = await axios.get('/api/admin/stats');
@@ -74,8 +69,26 @@ const loadStats = async () => {
  ElMessage.error('获取统计数据失败');
  }
 };
+const loadDailyStats = async () => {
+ try {
+ const response = await axios.get('/api/admin/stats/daily');
+ dailyData.value = response.data.map(item => ({
+ date: formatDate(item.date),
+ count: item.count
+ }));
+ }
+ catch (error) {
+ ElMessage.error('获取每日统计数据失败');
+ }
+};
+const formatDate = (dateStr) => {
+ if (!dateStr) return '';
+ const date = new Date(dateStr);
+ return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
 onMounted(() => {
  loadStats();
+ loadDailyStats();
 });
 </script>
 

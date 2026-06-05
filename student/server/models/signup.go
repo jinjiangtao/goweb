@@ -215,6 +215,11 @@ type StatsResponse struct {
 	Rejected int `json:"rejected"`
 }
 
+type DailyStats struct {
+	Date  string `json:"date"`
+	Count int    `json:"count"`
+}
+
 func GetStats() (*StatsResponse, error) {
 	var stats StatsResponse
 	var pending, approved, rejected int64
@@ -234,4 +239,19 @@ func GetStats() (*StatsResponse, error) {
 	stats.Approved = int(approved)
 	stats.Rejected = int(rejected)
 	return &stats, nil
+}
+
+func GetDailyStats() ([]DailyStats, error) {
+	var dailyStats []DailyStats
+	err := DB.Raw(`
+		SELECT DATE(created_at) as date, COUNT(*) as count 
+		FROM signups 
+		GROUP BY DATE(created_at) 
+		ORDER BY date DESC 
+		LIMIT 7
+	`).Scan(&dailyStats).Error
+	if err != nil {
+		return nil, err
+	}
+	return dailyStats, nil
 }

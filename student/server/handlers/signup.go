@@ -251,6 +251,16 @@ func GetStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
+func GetDailyStats(c *gin.Context) {
+	dailyStats, err := models.GetDailyStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取每日统计失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, dailyStats)
+}
+
 type ImportResult struct {
 	SuccessCount int      `json:"success_count"`
 	FailedCount  int      `json:"failed_count"`

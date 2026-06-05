@@ -24,6 +24,7 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/signups/export", handlers.ExportSignups)
 			protected.POST("/signups/import", handlers.ImportSignups)
 			protected.GET("/stats", handlers.GetStats)
+			protected.GET("/stats/daily", handlers.GetDailyStats)
 
 			protected.GET("/schools", handlers.GetSchools)
 			protected.GET("/schools/all", handlers.GetAllSchools)
