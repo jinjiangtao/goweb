@@ -10,7 +10,7 @@
           <span>报名列表</span>
         </el-menu-item>
         <el-menu-item index="2" @click="navigate('/schools')">
-          <el-icon><component :is="Building2" /></el-icon>
+          <el-icon><component :is="School" /></el-icon>
           <span>学校管理</span>
         </el-menu-item>
         <el-menu-item index="3" @click="navigate('/stats')">
@@ -33,7 +33,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { List, DataAnalysis, Building2 } from '@element-plus/icons-vue'
+import { List, DataAnalysis, School } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
