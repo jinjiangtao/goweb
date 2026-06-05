@@ -22,13 +22,16 @@ func CreateSignup(signup *Signup) error {
 	return DB.Create(signup).Error
 }
 
-func GetSignups(page, pageSize int, keyword string) (*SignupListResponse, error) {
+func GetSignups(page, pageSize int, keyword, status string) (*SignupListResponse, error) {
 	var signups []Signup
 	var total int64
 
 	query := DB.Model(&Signup{})
 	if keyword != "" {
 		query = query.Where("name LIKE ? OR phone LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	if status != "" && status != "all" {
+		query = query.Where("status = ?", status)
 	}
 
 	err := query.Count(&total).Error
@@ -45,6 +48,29 @@ func GetSignups(page, pageSize int, keyword string) (*SignupListResponse, error)
 		Total: int(total),
 		List:  signups,
 	}, nil
+}
+
+func GetAllSignupsForExport(keyword, status string) ([]Signup, error) {
+	var signups []Signup
+
+	query := DB.Model(&Signup{})
+	if keyword != "" {
+		query = query.Where("name LIKE ? OR phone LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	if status != "" && status != "all" {
+		query = query.Where("status = ?", status)
+	}
+
+	err := query.Order("created_at DESC").Find(&signups).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return signups, nil
+}
+
+func UpdateSignup(signup *Signup) error {
+	return DB.Save(signup).Error
 }
 
 func GetSignupByID(id uint) (*Signup, error) {
