@@ -48,6 +48,18 @@ func CreateDefaultAdmin() {
 			log.Fatal("Failed to create default admin: ", err)
 		}
 		log.Println("Default admin created")
+	} else {
+		if admin.Role != RoleSuperAdmin || admin.Nickname != "超级管理员" {
+			admin.Role = RoleSuperAdmin
+			admin.Nickname = "超级管理员"
+			admin.Status = StatusEnabled
+			err := DB.Save(&admin).Error
+			if err != nil {
+				log.Println("Failed to update default admin role: ", err)
+			} else {
+				log.Println("Default admin role updated to super_admin")
+			}
+		}
 	}
 }
 
