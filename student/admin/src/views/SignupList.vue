@@ -371,6 +371,12 @@ const openEditDialog = (row) => {
  editForm.age = row.age;
  editForm.hukou = row.hukou;
  editForm.school = row.school;
+ 
+ const schoolExists = schoolOptions.value.some(s => s.name === row.school);
+ if (row.school && !schoolExists) {
+ schoolOptions.value.push({ id: 0, name: row.school });
+ }
+ 
  showEditDialog.value = true;
 };
 const handleEditSubmit = async () => {
