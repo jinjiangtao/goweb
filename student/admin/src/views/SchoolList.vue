@@ -79,7 +79,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import axios from 'axios';
+import axios from '../utils/axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 const keyword = ref('');

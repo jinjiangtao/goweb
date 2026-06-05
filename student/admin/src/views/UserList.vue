@@ -100,7 +100,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
 

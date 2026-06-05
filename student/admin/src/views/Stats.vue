@@ -49,7 +49,7 @@
 </template>
 
 <script setup>import { reactive, ref, onMounted } from 'vue';
-import axios from 'axios';
+import axios from '../utils/axios';
 import { Clock, CircleCheck, CircleClose } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 const stats = reactive({
