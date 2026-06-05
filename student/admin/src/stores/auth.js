@@ -8,7 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
   const menus = ref(JSON.parse(localStorage.getItem('menus') || '[]'))
 
   const login = async (username, password) => {
-    const response = await axios.post('/admin/login', { username, password })
+    const response = await axios.post('/api/admin/login', { username, password })
     token.value = response.data.token
     user.value = response.data.user
     menus.value = response.data.menus
