@@ -30,15 +30,15 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog :title="addForm.id ? '编辑菜单' : '添加菜单'" :visible.sync="addModalVisible" width="450px">
-      <el-form :model="addForm" ref="addFormRef" label-width="100px">
-        <el-form-item label="菜单名称" prop="name">
+    <el-dialog :title="isEdit ? '编辑菜单' : '添加菜单'" :visible="showAddDialog" width="450px">
+      <el-form :model="addForm" label-width="100px">
+        <el-form-item label="菜单名称">
           <el-input v-model="addForm.name" placeholder="请输入菜单名称" />
         </el-form-item>
-        <el-form-item label="路由路径" prop="path">
+        <el-form-item label="路由路径">
           <el-input v-model="addForm.path" placeholder="请输入路由路径" />
         </el-form-item>
-        <el-form-item label="图标" prop="icon">
+        <el-form-item label="图标">
           <el-select v-model="addForm.icon">
             <el-option label="列表" value="List" />
             <el-option label="数据分析" value="DataAnalysis" />
@@ -47,16 +47,16 @@
             <el-option label="菜单" value="Menu" />
           </el-select>
         </el-form-item>
-        <el-form-item label="排序号" prop="sort">
+        <el-form-item label="排序号">
           <el-input v-model.number="addForm.sort" placeholder="数字越小越靠前" />
         </el-form-item>
-        <el-form-item label="父级菜单" prop="parent_id">
+        <el-form-item label="父级菜单">
           <el-select v-model="addForm.parent_id">
             <el-option label="顶级（一级菜单）" :value="0" />
             <el-option v-for="menu in parentMenus" :key="menu.id" :label="menu.name" :value="menu.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="是否显示" prop="visible">
+        <el-form-item label="是否显示">
           <el-select v-model="addForm.visible">
             <el-option label="显示" :value="1" />
             <el-option label="隐藏" :value="0" />
@@ -64,7 +64,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addModalVisible = false">取消</el-button>
+        <el-button @click="closeAddDialog">取消</el-button>
         <el-button type="primary" @click="handleSave">确定</el-button>
       </template>
     </el-dialog>
@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, markRaw } from 'vue'
+import { ref, reactive, onMounted, markRaw, computed } from 'vue'
 import axios from '../utils/axios'
 import { ElMessage } from 'element-plus'
 import { List, DataAnalysis, School, User, Menu } from '@element-plus/icons-vue'
@@ -91,8 +91,7 @@ const getIcon = (iconName) => {
 
 const tableData = ref([])
 const parentMenus = ref([])
-const addModalVisible = ref(false)
-const addFormRef = ref()
+const showAddDialog = ref(false)
 
 const addForm = reactive({
   id: 0,
@@ -103,6 +102,8 @@ const addForm = reactive({
   parent_id: 0,
   visible: 1
 })
+
+const isEdit = computed(() => addForm.id !== 0)
 
 const loadData = async () => {
   try {
@@ -131,6 +132,7 @@ const loadData = async () => {
 }
 
 const openAddModal = () => {
+  console.log('openAddModal called')
   addForm.id = 0
   addForm.name = ''
   addForm.path = ''
@@ -138,7 +140,11 @@ const openAddModal = () => {
   addForm.sort = 0
   addForm.parent_id = 0
   addForm.visible = 1
-  addModalVisible.value = true
+  showAddDialog.value = true
+}
+
+const closeAddDialog = () => {
+  showAddDialog.value = false
 }
 
 const openEditModal = (row) => {
@@ -149,18 +155,19 @@ const openEditModal = (row) => {
   addForm.sort = row.sort
   addForm.parent_id = row.parent_id
   addForm.visible = row.visible
-  addModalVisible.value = true
+  showAddDialog.value = true
 }
 
 const handleSave = async () => {
+  console.log('handleSave called', addForm)
   if (!addForm.name) {
     ElMessage.warning('请填写菜单名称')
     return
   }
 
   try {
-    if (addForm.id) {
-      await axios.put(`/api/admin/menus/${addForm.id}`, {
+    if (isEdit.value) {
+      await axios.put('/api/admin/menus/' + addForm.id, {
         name: addForm.name,
         path: addForm.path,
         icon: addForm.icon,
@@ -180,16 +187,17 @@ const handleSave = async () => {
       })
       ElMessage.success('添加成功')
     }
-    addModalVisible.value = false
+    closeAddDialog()
     loadData()
   } catch (error) {
+    console.error('Save error:', error)
     ElMessage.error(error.response?.data?.error || '操作失败')
   }
 }
 
 const handleDelete = async (row) => {
   try {
-    await axios.delete(`/api/admin/menus/${row.id}`)
+    await axios.delete('/api/admin/menus/' + row.id)
     ElMessage.success('删除成功')
     loadData()
   } catch (error) {

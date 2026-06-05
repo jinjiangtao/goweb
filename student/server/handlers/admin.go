@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"student-signup-server/models"
 	"student-signup-server/utils"
@@ -21,6 +22,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	req.Username = strings.TrimSpace(req.Username)
 	admin, err := models.GetAdminByUsername(req.Username)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户名或密码错误"})
