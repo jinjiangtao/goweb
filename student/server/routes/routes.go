@@ -32,6 +32,20 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/schools/:id", handlers.GetSchool)
 			protected.PUT("/schools/:id", handlers.UpdateSchool)
 			protected.DELETE("/schools/:id", handlers.DeleteSchool)
+
+			protected.GET("/users", handlers.GetUsers)
+			protected.POST("/users", handlers.CreateUser)
+			protected.PUT("/users/:id", handlers.UpdateUser)
+			protected.DELETE("/users/:id", handlers.DeleteUser)
+			protected.POST("/users/:id/reset-password", handlers.ResetPassword)
+			protected.GET("/user/info", handlers.GetUserInfo)
+
+			protected.GET("/menus", handlers.GetMenus)
+			protected.GET("/menus/tree", handlers.GetMenuTree)
+			protected.GET("/menus/parent", handlers.GetParentMenus)
+			protected.POST("/menus", handlers.CreateMenu)
+			protected.PUT("/menus/:id", handlers.UpdateMenu)
+			protected.DELETE("/menus/:id", handlers.DeleteMenu)
 		}
 	}
 }

@@ -16,10 +16,11 @@ func InitDB() {
 		log.Fatal("Failed to connect database: ", err)
 	}
 
-	err = DB.AutoMigrate(&Signup{}, &Admin{}, &School{})
+	err = DB.AutoMigrate(&Signup{}, &Admin{}, &School{}, &Menu{})
 	if err != nil {
 		log.Fatal("Failed to migrate database: ", err)
 	}
 
 	CreateDefaultAdmin()
+	CreateDefaultMenus()
 }

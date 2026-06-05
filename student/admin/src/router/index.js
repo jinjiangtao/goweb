@@ -26,6 +26,16 @@ const routes = [
         path: 'schools',
         name: 'SchoolList',
         component: () => import('../views/SchoolList.vue')
+      },
+      {
+        path: 'users',
+        name: 'UserList',
+        component: () => import('../views/UserList.vue')
+      },
+      {
+        path: 'menus',
+        name: 'MenuList',
+        component: () => import('../views/MenuList.vue')
       }
     ]
   }
