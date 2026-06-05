@@ -133,6 +133,82 @@ func UpdateSignupStatus(id uint, status string) error {
 	return DB.Model(&Signup{}).Where("id = ?", id).Update("status", status).Error
 }
 
+type School struct {
+	ID          uint       `json:"id" gorm:"primary_key"`
+	Name        string     `json:"name" gorm:"not null;unique"`
+	Description string     `json:"description" gorm:"not null"`
+	CreatedAt   CustomTime `json:"created_at"`
+}
+
+type SchoolListResponse struct {
+	Total int      `json:"total"`
+	List  []School `json:"list"`
+}
+
+func CreateSchool(school *School) error {
+	return DB.Create(school).Error
+}
+
+func GetSchools(page, pageSize int, keyword string) (*SchoolListResponse, error) {
+	var schools []School
+	var total int64
+
+	query := DB.Model(&School{})
+	if keyword != "" {
+		query = query.Where("name LIKE ?", "%"+keyword+"%")
+	}
+
+	err := query.Count(&total).Error
+	if err != nil {
+		return nil, err
+	}
+
+	err = query.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&schools).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &SchoolListResponse{
+		Total: int(total),
+		List:  schools,
+	}, nil
+}
+
+func GetAllSchools() ([]School, error) {
+	var schools []School
+	err := DB.Order("created_at DESC").Find(&schools).Error
+	return schools, err
+}
+
+func GetSchoolByID(id uint) (*School, error) {
+	var school School
+	err := DB.First(&school, id).Error
+	return &school, err
+}
+
+func GetSchoolByName(name string) (*School, error) {
+	var school School
+	err := DB.Where("name = ?", name).First(&school).Error
+	return &school, err
+}
+
+func UpdateSchool(school *School) error {
+	return DB.Save(school).Error
+}
+
+func DeleteSchool(id uint) error {
+	return DB.Delete(&School{}, id).Error
+}
+
+func CheckSchoolUsed(id uint) (bool, error) {
+	var count int64
+	err := DB.Model(&Signup{}).Where("school = (SELECT name FROM schools WHERE id = ?)", id).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 type StatsResponse struct {
 	Pending  int `json:"pending"`
 	Approved int `json:"approved"`

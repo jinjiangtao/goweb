@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"student-signup-server/models"
@@ -248,4 +249,143 @@ func GetStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, stats)
+}
+
+type ImportResult struct {
+	SuccessCount int      `json:"success_count"`
+	FailedCount  int      `json:"failed_count"`
+	Errors       []string `json:"errors"`
+}
+
+var phoneRegex = regexp.MustCompile(`^1[3-9]\d{9}$`)
+
+func ImportSignups(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请上传文件"})
+		return
+	}
+
+	fileContent, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无法打开文件"})
+		return
+	}
+	defer fileContent.Close()
+
+	f, err := excelize.OpenReader(fileContent)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "文件格式错误"})
+		return
+	}
+	defer f.Close()
+
+	rows, err := f.GetRows("Sheet1")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "读取文件失败"})
+		return
+	}
+
+	if len(rows) <= 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "文件内容为空"})
+		return
+	}
+
+	schools, err := models.GetAllSchools()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取学校列表失败"})
+		return
+	}
+
+	schoolNames := make(map[string]bool)
+	for _, school := range schools {
+		schoolNames[school.Name] = true
+	}
+
+	result := ImportResult{
+		SuccessCount: 0,
+		FailedCount:  0,
+		Errors:       []string{},
+	}
+
+	for i, row := range rows {
+		if i == 0 {
+			continue
+		}
+
+		if len(row) < 5 {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：数据列数不足", i+1))
+			continue
+		}
+
+		name := row[0]
+		phone := row[1]
+		ageStr := row[2]
+		hukou := row[3]
+		school := row[4]
+
+		if name == "" {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：姓名不能为空", i+1))
+			continue
+		}
+
+		if phone == "" {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：手机号不能为空", i+1))
+			continue
+		}
+
+		if !phoneRegex.MatchString(phone) {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：手机号格式不正确", i+1))
+			continue
+		}
+
+		age, err := strconv.Atoi(ageStr)
+		if err != nil || age <= 0 || age > 150 {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：年龄格式不正确", i+1))
+			continue
+		}
+
+		if hukou == "" {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：户口地址不能为空", i+1))
+			continue
+		}
+
+		if school == "" {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：学校不能为空", i+1))
+			continue
+		}
+
+		if !schoolNames[school] {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：学校不存在", i+1))
+			continue
+		}
+
+		signup := models.Signup{
+			Name:   name,
+			Phone:  phone,
+			Age:    age,
+			Hukou:  hukou,
+			School: school,
+			Status: "pending",
+		}
+
+		err = models.CreateSignup(&signup)
+		if err != nil {
+			result.FailedCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("第%d行：创建失败", i+1))
+			continue
+		}
+
+		result.SuccessCount++
+	}
+
+	c.JSON(http.StatusOK, result)
 }

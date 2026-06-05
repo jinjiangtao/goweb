@@ -30,6 +30,7 @@
       <div class="action-area">
         <el-button type="success" @click="showAddDialog = true">新增报名</el-button>
         <el-button type="warning" @click="exportExcel">导出Excel</el-button>
+        <el-button type="info" @click="showImportDialog = true">批量导入</el-button>
       </div>
     </div>
 
@@ -102,7 +103,27 @@
           <el-input v-model="editForm.hukou" />
         </el-form-item>
         <el-form-item label="学校" prop="school">
-          <el-input v-model="editForm.school" />
+          <div class="school-select-wrapper">
+            <el-select
+              v-model="editForm.school"
+              placeholder="请选择学校"
+              class="school-select"
+            >
+              <el-option
+                v-for="school in schoolOptions"
+                :key="school.id"
+                :label="school.name"
+                :value="school.name"
+              />
+            </el-select>
+            <el-button
+              type="text"
+              @click="loadSchoolOptions"
+              class="refresh-btn"
+            >
+              <el-icon><component :is="Refresh" /></el-icon>
+            </el-button>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -126,7 +147,27 @@
           <el-input v-model="addForm.hukou" />
         </el-form-item>
         <el-form-item label="学校" prop="school">
-          <el-input v-model="addForm.school" />
+          <div class="school-select-wrapper">
+            <el-select
+              v-model="addForm.school"
+              placeholder="请选择学校"
+              class="school-select"
+            >
+              <el-option
+                v-for="school in schoolOptions"
+                :key="school.id"
+                :label="school.name"
+                :value="school.name"
+              />
+            </el-select>
+            <el-button
+              type="text"
+              @click="loadSchoolOptions"
+              class="refresh-btn"
+            >
+              <el-icon><component :is="Refresh" /></el-icon>
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="addForm.status">
@@ -141,12 +182,71 @@
         <el-button type="primary" @click="handleAddSubmit">确认添加</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog title="批量导入" v-model="showImportDialog" width="400px">
+      <div class="import-content">
+        <p>请上传包含以下列的Excel文件：</p>
+        <ul>
+          <li>姓名</li>
+          <li>手机号</li>
+          <li>年龄</li>
+          <li>户口地址</li>
+          <li>学校</li>
+        </ul>
+        <el-upload
+          class="upload-demo"
+          action=""
+          :auto-upload="false"
+          :show-file-list="false"
+          :on-change="handleFileChange"
+          accept=".xlsx,.xls"
+        >
+          <el-button type="primary">选择文件</el-button>
+        </el-upload>
+        <div v-if="importFile" class="file-info">
+          <span>{{ importFile.name }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showImportDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleImportSubmit">确认导入</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog title="导入结果" v-model="showImportResult" width="500px">
+      <div class="result-content">
+        <div class="result-stats">
+          <div class="stat-item success">
+            <span class="stat-value">{{ importResult.success }}</span>
+            <span class="stat-label">成功导入</span>
+          </div>
+          <div class="stat-item error">
+            <span class="stat-value">{{ importResult.failed }}</span>
+            <span class="stat-label">导入失败</span>
+          </div>
+        </div>
+        <div v-if="importResult.errors.length > 0" class="errors-list">
+          <p class="errors-title">失败原因：</p>
+          <el-scrollbar height="200px">
+            <ul>
+              <li v-for="(error, index) in importResult.errors" :key="index">
+                {{ error }}
+              </li>
+            </ul>
+          </el-scrollbar>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="showImportResult = false">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>import { ref, reactive, onMounted } from 'vue';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import { Refresh } from '@element-plus/icons-vue';
 const filters = reactive({
  name: '',
  phone: '',
@@ -161,6 +261,15 @@ const pagination = reactive({
 });
 const showEditDialog = ref(false);
 const showAddDialog = ref(false);
+const showImportDialog = ref(false);
+const showImportResult = ref(false);
+const schoolOptions = ref([]);
+const importFile = ref(null);
+const importResult = reactive({
+ success: 0,
+ failed: 0,
+ errors: []
+});
 const editForm = reactive({
  id: '',
  name: '',
@@ -177,6 +286,15 @@ const addForm = reactive({
  school: '',
  status: 'pending'
 });
+
+const loadSchoolOptions = async () => {
+ try {
+ const response = await axios.get('/api/admin/schools/all');
+ schoolOptions.value = response.data;
+ } catch (error) {
+ ElMessage.error('获取学校列表失败');
+ }
+};
 const loadData = async () => {
  try {
  const response = await axios.get('/api/admin/signups', {
@@ -319,8 +437,36 @@ const exportExcel = async () => {
  ElMessage.error('导出失败');
  }
 };
+const handleFileChange = (file) => {
+ importFile.value = file.raw;
+};
+const handleImportSubmit = async () => {
+ if (!importFile.value) {
+ ElMessage.error('请选择文件');
+ return;
+ }
+ try {
+ const formData = new FormData();
+ formData.append('file', importFile.value);
+ const response = await axios.post('/api/admin/signups/import', formData, {
+ headers: {
+ 'Content-Type': 'multipart/form-data'
+ }
+ });
+ importResult.success = response.data.success_count;
+ importResult.failed = response.data.failed_count;
+ importResult.errors = response.data.errors || [];
+ showImportDialog.value = false;
+ showImportResult.value = true;
+ importFile.value = null;
+ loadData();
+ } catch (error) {
+ ElMessage.error(error.response?.data?.error || '导入失败');
+ }
+};
 onMounted(() => {
  loadData();
+ loadSchoolOptions();
 });
 </script>
 
@@ -359,5 +505,76 @@ onMounted(() => {
 }
 .status-rejected {
   color: #f56c6c;
+}
+.school-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.school-select {
+  flex: 1;
+}
+.refresh-btn {
+  padding: 0;
+}
+.import-content {
+  padding: 10px 0;
+}
+.import-content p {
+  margin-bottom: 8px;
+}
+.import-content ul {
+  padding-left: 20px;
+  margin-bottom: 16px;
+}
+.file-info {
+  margin-top: 12px;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+.result-content {
+  padding: 10px 0;
+}
+.result-stats {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 20px;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: bold;
+}
+.stat-item.success .stat-value {
+  color: #67c23a;
+}
+.stat-item.error .stat-value {
+  color: #f56c6c;
+}
+.stat-label {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+.errors-list {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+.errors-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.errors-list ul {
+  padding-left: 20px;
+}
+.errors-list li {
+  color: #f56c6c;
+  margin-bottom: 4px;
+  font-size: 14px;
 }
 </style>

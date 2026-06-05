@@ -22,7 +22,15 @@ func SetupRoutes(r *gin.Engine) {
 			protected.PUT("/signups/:id", handlers.AdminUpdateSignup)
 			protected.PUT("/signups/:id/status", handlers.UpdateSignupStatus)
 			protected.GET("/signups/export", handlers.ExportSignups)
+			protected.POST("/signups/import", handlers.ImportSignups)
 			protected.GET("/stats", handlers.GetStats)
+
+			protected.GET("/schools", handlers.GetSchools)
+			protected.GET("/schools/all", handlers.GetAllSchools)
+			protected.POST("/schools", handlers.CreateSchool)
+			protected.GET("/schools/:id", handlers.GetSchool)
+			protected.PUT("/schools/:id", handlers.UpdateSchool)
+			protected.DELETE("/schools/:id", handlers.DeleteSchool)
 		}
 	}
 }

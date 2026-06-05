@@ -9,7 +9,11 @@
           <el-icon><component :is="List" /></el-icon>
           <span>报名列表</span>
         </el-menu-item>
-        <el-menu-item index="2" @click="navigate('/stats')">
+        <el-menu-item index="2" @click="navigate('/schools')">
+          <el-icon><component :is="Building" /></el-icon>
+          <span>学校管理</span>
+        </el-menu-item>
+        <el-menu-item index="3" @click="navigate('/stats')">
           <el-icon><component :is="DataAnalysis" /></el-icon>
           <span>统计看板</span>
         </el-menu-item>
@@ -29,7 +33,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { List, DataAnalysis } from '@element-plus/icons-vue'
+import { List, DataAnalysis, Building } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -37,11 +41,15 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const activeMenu = computed(() => {
-  return route.path === '/' ? '1' : '2'
+  if (route.path === '/') return '1'
+  if (route.path === '/schools') return '2'
+  return '3'
 })
 
 const pageTitle = computed(() => {
-  return route.path === '/' ? '报名列表' : '统计看板'
+  if (route.path === '/') return '报名列表'
+  if (route.path === '/schools') return '学校管理'
+  return '统计看板'
 })
 
 const navigate = (path) => {

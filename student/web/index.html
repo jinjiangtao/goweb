@@ -47,7 +47,8 @@
             margin-bottom: 8px;
             font-weight: 500;
         }
-        .form-group input {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e0e0e0;
@@ -55,13 +56,29 @@
             font-size: 15px;
             transition: all 0.3s ease;
             outline: none;
+            background: white;
         }
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         .form-group input::placeholder {
             color: #ccc;
+        }
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+        }
+        .other-school-input {
+            margin-top: 10px;
+            display: none;
+        }
+        .other-school-input.show {
+            display: block;
         }
         .btn-submit {
             width: 100%;
@@ -110,6 +127,11 @@
         .toast.error {
             background: rgba(211, 47, 47, 0.9);
         }
+        .loading {
+            text-align: center;
+            padding: 10px;
+            color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -137,7 +159,10 @@
             </div>
             <div class="form-group">
                 <label for="school">学校</label>
-                <input type="text" id="school" placeholder="请输入学校名称" required>
+                <select id="school" required>
+                    <option value="">请选择学校</option>
+                </select>
+                <input type="text" id="otherSchool" placeholder="其他学校（选填）" class="other-school-input">
             </div>
             <button type="submit" class="btn-submit">提交报名</button>
         </form>
@@ -147,6 +172,8 @@
     <script>
         const form = document.getElementById('signupForm');
         const toast = document.getElementById('toast');
+        const schoolSelect = document.getElementById('school');
+        const otherSchoolInput = document.getElementById('otherSchool');
 
         function showToast(message, type = 'success') {
             toast.textContent = message;
@@ -156,6 +183,37 @@
             }, 2000);
         }
 
+        async function loadSchools() {
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/schools/all');
+                const schools = await response.json();
+                
+                schools.forEach(school => {
+                    const option = document.createElement('option');
+                    option.value = school.name;
+                    option.textContent = school.name;
+                    schoolSelect.appendChild(option);
+                });
+                
+                const otherOption = document.createElement('option');
+                otherOption.value = '__other__';
+                otherOption.textContent = '其他';
+                schoolSelect.appendChild(otherOption);
+            } catch (error) {
+                console.error('加载学校列表失败:', error);
+            }
+        }
+
+        schoolSelect.addEventListener('change', () => {
+            if (schoolSelect.value === '__other__') {
+                otherSchoolInput.classList.add('show');
+                otherSchoolInput.required = false;
+            } else {
+                otherSchoolInput.classList.remove('show');
+                otherSchoolInput.value = '';
+            }
+        });
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -163,13 +221,25 @@
             btn.disabled = true;
             btn.textContent = '提交中...';
 
+            let school = schoolSelect.value;
+            if (school === '__other__') {
+                school = otherSchoolInput.value || '';
+            }
+
             const data = {
                 name: document.getElementById('name').value,
                 phone: document.getElementById('phone').value,
                 age: parseInt(document.getElementById('age').value),
                 hukou: document.getElementById('hukou').value,
-                school: document.getElementById('school').value
+                school: school
             };
+
+            if (!data.school) {
+                showToast('请选择或填写学校', 'error');
+                btn.disabled = false;
+                btn.textContent = '提交报名';
+                return;
+            }
 
             try {
                 const response = await fetch('http://localhost:8080/api/signup', {
@@ -185,6 +255,9 @@
                 if (response.ok) {
                     showToast(result.message, 'success');
                     form.reset();
+                    schoolSelect.value = '';
+                    otherSchoolInput.classList.remove('show');
+                    otherSchoolInput.value = '';
                 } else {
                     showToast(result.error || '报名失败', 'error');
                 }
@@ -195,6 +268,8 @@
                 btn.textContent = '提交报名';
             }
         });
+
+        loadSchools();
     </script>
 </body>
 </html>

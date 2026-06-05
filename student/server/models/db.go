@@ -16,7 +16,7 @@ func InitDB() {
 		log.Fatal("Failed to connect database: ", err)
 	}
 
-	err = DB.AutoMigrate(&Signup{}, &Admin{})
+	err = DB.AutoMigrate(&Signup{}, &Admin{}, &School{})
 	if err != nil {
 		log.Fatal("Failed to migrate database: ", err)
 	}
