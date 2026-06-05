@@ -63,14 +63,14 @@ const handleLogout = () => {
 }
 .sidebar {
   width: 200px;
-  background: #2c3e50;
+  background: #34495e;
   color: white;
   padding: 20px 0;
 }
 .logo {
   text-align: center;
   padding: 0 20px 20px;
-  border-bottom: 1px solid #34495e;
+  border-bottom: 1px solid #2c3e50;
 }
 .logo h2 {
   margin: 0;
@@ -78,12 +78,20 @@ const handleLogout = () => {
 }
 .el-menu {
   border-right: none;
+  background: transparent;
 }
 .el-menu-item {
-  color: #ecf0f1;
+  color: #bdc3c7;
+  background: transparent;
 }
-.el-menu-item:hover, .el-menu-item.is-active {
-  background: #34495e;
+.el-menu-item:hover {
+  color: #ecf0f1;
+  background: rgba(255, 255, 255, 0.1);
+}
+.el-menu-item.is-active {
+  color: #ffffff;
+  background: #2c3e50;
+  border-left: 3px solid #3498db;
 }
 .main-content {
   flex: 1;

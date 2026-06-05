@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"student-signup-server/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
 )
 
 type SignupRequest struct {
@@ -158,10 +160,53 @@ func ExportSignups(c *gin.Context) {
 		return
 	}
 
+	f := excelize.NewFile()
+	index, err := f.NewSheet("报名记录")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建Excel失败"})
+		return
+	}
+	f.SetCellValue("报名记录", "A1", "姓名")
+	f.SetCellValue("报名记录", "B1", "手机号")
+	f.SetCellValue("报名记录", "C1", "年龄")
+	f.SetCellValue("报名记录", "D1", "户口地址")
+	f.SetCellValue("报名记录", "E1", "学校")
+	f.SetCellValue("报名记录", "F1", "状态")
+	f.SetCellValue("报名记录", "G1", "提交时间")
+
+	for i, signup := range signups {
+		row := i + 2
+		f.SetCellValue("报名记录", fmt.Sprintf("A%d", row), signup.Name)
+		f.SetCellValue("报名记录", fmt.Sprintf("B%d", row), signup.Phone)
+		f.SetCellValue("报名记录", fmt.Sprintf("C%d", row), signup.Age)
+		f.SetCellValue("报名记录", fmt.Sprintf("D%d", row), signup.Hukou)
+		f.SetCellValue("报名记录", fmt.Sprintf("E%d", row), signup.School)
+		f.SetCellValue("报名记录", fmt.Sprintf("F%d", row), getStatusText(signup.Status))
+		f.SetCellValue("报名记录", fmt.Sprintf("G%d", row), signup.CreatedAt.String())
+	}
+
+	f.SetActiveSheet(index)
+
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", "attachment; filename=signups.xlsx")
 
-	c.JSON(http.StatusOK, signups)
+	if err := f.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "导出失败"})
+		return
+	}
+}
+
+func getStatusText(status string) string {
+	switch status {
+	case "pending":
+		return "报名中"
+	case "approved":
+		return "报名成功"
+	case "rejected":
+		return "报名失败"
+	default:
+		return status
+	}
 }
 
 type UpdateStatusRequest struct {
