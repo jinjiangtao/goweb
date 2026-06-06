@@ -24,6 +24,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -35,17 +36,25 @@ const form = ref({
 const loading = ref(false)
 
 const handleLogin = async () => {
+  console.log('开始登录...')
+  console.log('用户名:', form.value.username)
+  console.log('密码:', form.value.password)
+  
   if (!form.value.username || !form.value.password) {
     ElMessage.warning('请输入用户名和密码')
     return
   }
   loading.value = true
   try {
-    const res = await authStore.api.post('/login', form.value)
+    console.log('发送请求到: http://localhost:8080/api/admin/login')
+    const res = await axios.post('http://localhost:8080/api/admin/login', form.value)
+    console.log('响应:', res)
+    
     authStore.setAuth(res.data.token, res.data.admin)
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {
+    console.error('登录错误:', error)
     ElMessage.error(error.response?.data?.error || '登录失败')
   } finally {
     loading.value = false
