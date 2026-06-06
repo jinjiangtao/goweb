@@ -1,4 +1,3 @@
-
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
@@ -8,7 +7,7 @@ const api = axios.create({
   timeout: 10000
 })
 
-api.interceptors.request.use(config =&gt; {
+api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -17,8 +16,8 @@ api.interceptors.request.use(config =&gt; {
 })
 
 api.interceptors.response.use(
-  response =&gt; response,
-  error =&gt; {
+  response => response,
+  error => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       window.location.href = '/login'
@@ -27,18 +26,18 @@ api.interceptors.response.use(
   }
 )
 
-export const useAuthStore = defineStore('auth', () =&gt; {
+export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
   const admin = ref(JSON.parse(localStorage.getItem('admin') || 'null'))
 
-  const setAuth = (newToken, newAdmin) =&gt; {
+  const setAuth = (newToken, newAdmin) => {
     token.value = newToken
     admin.value = newAdmin
     localStorage.setItem('token', newToken)
     localStorage.setItem('admin', JSON.stringify(newAdmin))
   }
 
-  const logout = () =&gt; {
+  const logout = () => {
     token.value = ''
     admin.value = null
     localStorage.removeItem('token')
@@ -47,4 +46,3 @@ export const useAuthStore = defineStore('auth', () =&gt; {
 
   return { token, admin, setAuth, logout, api }
 })
-

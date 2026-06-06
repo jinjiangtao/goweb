@@ -1,31 +1,30 @@
+<template>
+  <div class="stats">
+    <div class="cards">
+      <div class="card">
+        <div class="label">今日预订数</div>
+        <div class="value">{{ stats.today_bookings || 0 }}</div>
+      </div>
+      <div class="card">
+        <div class="label">启用会议室</div>
+        <div class="value">{{ stats.active_rooms || 0 }}</div>
+      </div>
+    </div>
 
-&lt;template&gt;
-  &lt;div class="stats"&gt;
-    &lt;div class="cards"&gt;
-      &lt;div class="card"&gt;
-        &lt;div class="label"&gt;今日预订数&lt;/div&gt;
-        &lt;div class="value"&gt;{{ stats.today_bookings || 0 }}&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;div class="card"&gt;
-        &lt;div class="label"&gt;启用会议室&lt;/div&gt;
-        &lt;div class="value"&gt;{{ stats.active_rooms || 0 }}&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+    <div class="charts">
+      <div class="chart-box">
+        <h3>本周每日预订量</h3>
+        <div ref="dailyChart" style="width: 100%; height: 350px"></div>
+      </div>
+      <div class="chart-box">
+        <h3>会议室本周预订排行</h3>
+        <div ref="roomChart" style="width: 100%; height: 350px"></div>
+      </div>
+    </div>
+  </div>
+</template>
 
-    &lt;div class="charts"&gt;
-      &lt;div class="chart-box"&gt;
-        &lt;h3&gt;本周每日预订量&lt;/h3&gt;
-        &lt;div ref="dailyChart" style="width: 100%; height: 350px"&gt;&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;div class="chart-box"&gt;
-        &lt;h3&gt;会议室本周预订排行&lt;/h3&gt;
-        &lt;div ref="roomChart" style="width: 100%; height: 350px"&gt;&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
-
-&lt;script setup&gt;
+<script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import * as echarts from 'echarts'
@@ -37,51 +36,55 @@ const roomChart = ref(null)
 let dailyChartInstance = null
 let roomChartInstance = null
 
-const fetchStats = async () =&gt; {
-  const res = await authStore.api.get('/stats')
-  stats.value = res.data
-  nextTick(() =&gt; {
-    renderCharts()
-  })
+const fetchStats = async () => {
+  try {
+    const res = await authStore.api.get('/stats')
+    stats.value = res.data
+    nextTick(() => {
+      renderCharts()
+    })
+  } catch (e) {
+    console.error(e)
+  }
 }
 
-const renderCharts = () =&gt; {
+const renderCharts = () => {
   if (dailyChart.value) {
     dailyChartInstance = echarts.init(dailyChart.value)
-    const days = (stats.value.daily_stats || []).map(d =&gt; d.date.slice(5))
+    const days = (stats.value.daily_stats || []).map(d => d.date.slice(5))
     dailyChartInstance.setOption({
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: days, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#cbd5e1' } },
       yAxis: { type: 'value', axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#cbd5e1' }, splitLine: { lineStyle: { color: '#334155' } } },
-      series: [{ type: 'bar', data: (stats.value.daily_stats || []).map(d =&gt; d.count), itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } }]
+      series: [{ type: 'bar', data: (stats.value.daily_stats || []).map(d => d.count), itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } }]
     })
   }
 
   if (roomChart.value) {
     roomChartInstance = echarts.init(roomChart.value)
-    const sortedRooms = (stats.value.room_stats || []).sort((a, b) =&gt; b.count - a.count)
+    const sortedRooms = (stats.value.room_stats || []).sort((a, b) => b.count - a.count)
     roomChartInstance.setOption({
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'value', axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#cbd5e1' }, splitLine: { lineStyle: { color: '#334155' } } },
-      yAxis: { type: 'category', data: sortedRooms.map(r =&gt; r.room_name), axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#cbd5e1' } },
-      series: [{ type: 'bar', data: sortedRooms.map(r =&gt; r.count), itemStyle: { color: '#8b5cf6', borderRadius: [0, 4, 4, 0] } }]
+      yAxis: { type: 'category', data: sortedRooms.map(r => r.room_name), axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#cbd5e1' } },
+      series: [{ type: 'bar', data: sortedRooms.map(r => r.count), itemStyle: { color: '#8b5cf6', borderRadius: [0, 4, 4, 0] } }]
     })
   }
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   fetchStats()
-  window.addEventListener('resize', () =&gt; {
+  window.addEventListener('resize', () => {
     dailyChartInstance?.resize()
     roomChartInstance?.resize()
   })
 })
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .stats {
   padding: 0;
 }
@@ -133,5 +136,4 @@ onMounted(() =&gt; {
   font-size: 16px;
   margin-bottom: 16px;
 }
-&lt;/style&gt;
-
+</style>

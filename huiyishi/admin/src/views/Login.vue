@@ -1,26 +1,25 @@
+<template>
+  <div class="login-container">
+    <div class="login-box">
+      <h1>会议室预订系统</h1>
+      <h2>管理后台</h2>
+      <el-form :model="form" @submit.prevent="handleLogin">
+        <el-form-item>
+          <el-input v-model="form.username" placeholder="用户名" prefix-icon="User" size="large" />
+        </el-form-item>
+        <el-form-item>
+          <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" size="large" show-password />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" size="large" style="width: 100%" :loading="loading" @click="handleLogin">登录</el-button>
+        </el-form-item>
+      </el-form>
+      <div class="hint">默认账号: admin / 123456</div>
+    </div>
+  </div>
+</template>
 
-&lt;template&gt;
-  &lt;div class="login-container"&gt;
-    &lt;div class="login-box"&gt;
-      &lt;h1&gt;会议室预订系统&lt;/h1&gt;
-      &lt;h2&gt;管理后台&lt;/h2&gt;
-      &lt;el-form :model="form" @submit.prevent="handleLogin"&gt;
-        &lt;el-form-item&gt;
-          &lt;el-input v-model="form.username" placeholder="用户名" prefix-icon="User" size="large" /&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item&gt;
-          &lt;el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" size="large" show-password /&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item&gt;
-          &lt;el-button type="primary" size="large" style="width: 100%" :loading="loading" @click="handleLogin"&gt;登录&lt;/el-button&gt;
-        &lt;/el-form-item&gt;
-      &lt;/el-form&gt;
-      &lt;div class="hint"&gt;默认账号: admin / 123456&lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
-
-&lt;script setup&gt;
+<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -35,7 +34,7 @@ const form = ref({
 })
 const loading = ref(false)
 
-const handleLogin = async () =&gt; {
+const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
     ElMessage.warning('请输入用户名和密码')
     return
@@ -52,9 +51,9 @@ const handleLogin = async () =&gt; {
     loading.value = false
   }
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .login-container {
   width: 100%;
   height: 100vh;
@@ -116,5 +115,4 @@ const handleLogin = async () =&gt; {
   font-size: 12px;
   margin-top: 16px;
 }
-&lt;/style&gt;
-
+</style>

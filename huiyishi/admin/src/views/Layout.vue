@@ -1,42 +1,41 @@
-
-&lt;template&gt;
-  &lt;el-container class="layout"&gt;
-    &lt;el-aside width="220px"&gt;
-      &lt;div class="logo"&gt;会议室预订&lt;/div&gt;
-      &lt;el-menu
+<template>
+  <el-container class="layout">
+    <el-aside width="220px">
+      <div class="logo">会议室预订</div>
+      <el-menu
         :default-active="activeMenu"
         router
         background-color="transparent"
         text-color="#cbd5e1"
         active-text-color="#3b82f6"
-      &gt;
-        &lt;el-menu-item index="/stats"&gt;
-          &lt;el-icon&gt;&lt;DataLine /&gt;&lt;/el-icon&gt;
-          &lt;span&gt;统计看板&lt;/span&gt;
-        &lt;/el-menu-item&gt;
-        &lt;el-menu-item index="/rooms"&gt;
-          &lt;el-icon&gt;&lt;OfficeBuilding /&gt;&lt;/el-icon&gt;
-          &lt;span&gt;会议室管理&lt;/span&gt;
-        &lt;/el-menu-item&gt;
-        &lt;el-menu-item index="/bookings"&gt;
-          &lt;el-icon&gt;&lt;Calendar /&gt;&lt;/el-icon&gt;
-          &lt;span&gt;预订管理&lt;/span&gt;
-        &lt;/el-menu-item&gt;
-      &lt;/el-menu&gt;
-    &lt;/el-aside&gt;
-    &lt;el-container&gt;
-      &lt;el-header&gt;
-        &lt;span class="welcome"&gt;欢迎, {{ authStore.admin?.nickname }}&lt;/span&gt;
-        &lt;el-button type="danger" @click="handleLogout"&gt;退出登录&lt;/el-button&gt;
-      &lt;/el-header&gt;
-      &lt;el-main&gt;
-        &lt;router-view /&gt;
-      &lt;/el-main&gt;
-    &lt;/el-container&gt;
-  &lt;/el-container&gt;
-&lt;/template&gt;
+      >
+        <el-menu-item index="/stats">
+          <el-icon><DataLine /></el-icon>
+          <span>统计看板</span>
+        </el-menu-item>
+        <el-menu-item index="/rooms">
+          <el-icon><OfficeBuilding /></el-icon>
+          <span>会议室管理</span>
+        </el-menu-item>
+        <el-menu-item index="/bookings">
+          <el-icon><Calendar /></el-icon>
+          <span>预订管理</span>
+        </el-menu-item>
+      </el-menu>
+    </el-aside>
+    <el-container>
+      <el-header>
+        <span class="welcome">欢迎, {{ authStore.admin?.nickname }}</span>
+        <el-button type="danger" @click="handleLogout">退出登录</el-button>
+      </el-header>
+      <el-main>
+        <router-view />
+      </el-main>
+    </el-container>
+  </el-container>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -46,15 +45,15 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-const activeMenu = computed(() =&gt; route.path)
+const activeMenu = computed(() => route.path)
 
-const handleLogout = () =&gt; {
+const handleLogout = () => {
   authStore.logout()
   router.push('/login')
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .layout {
   height: 100vh;
 }
@@ -97,5 +96,4 @@ const handleLogout = () =&gt; {
   background: #0f172a;
   padding: 24px;
 }
-&lt;/style&gt;
-
+</style>

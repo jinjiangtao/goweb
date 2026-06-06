@@ -1,76 +1,75 @@
+<template>
+  <div class="bookings">
+    <div class="header">
+      <h2>预订管理</h2>
+      <div class="filters">
+        <el-date-picker v-model="filterDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" clearable />
+        <el-select v-model="filterRoom" placeholder="选择会议室" clearable style="width: 180px">
+          <el-option v-for="room in rooms" :key="room.id" :label="room.name" :value="room.id" />
+        </el-select>
+        <el-select v-model="filterStatus" placeholder="选择状态" clearable style="width: 140px">
+          <el-option label="全部" value="" />
+          <el-option label="已预订" value="1" />
+          <el-option label="已取消" value="2" />
+        </el-select>
+        <el-button type="primary" @click="fetchBookings">查询</el-button>
+      </div>
+    </div>
 
-&lt;template&gt;
-  &lt;div class="bookings"&gt;
-    &lt;div class="header"&gt;
-      &lt;h2&gt;预订管理&lt;/h2&gt;
-      &lt;div class="filters"&gt;
-        &lt;el-date-picker v-model="filterDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" clearable /&gt;
-        &lt;el-select v-model="filterRoom" placeholder="选择会议室" clearable style="width: 180px"&gt;
-          &lt;el-option v-for="room in rooms" :key="room.id" :label="room.name" :value="room.id" /&gt;
-        &lt;/el-select&gt;
-        &lt;el-select v-model="filterStatus" placeholder="选择状态" clearable style="width: 140px"&gt;
-          &lt;el-option label="全部" value="" /&gt;
-          &lt;el-option label="已预订" value="1" /&gt;
-          &lt;el-option label="已取消" value="2" /&gt;
-        &lt;/el-select&gt;
-        &lt;el-button type="primary" @click="fetchBookings"&gt;查询&lt;/el-button&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-
-    &lt;el-table :data="bookings" stripe style="width: 100%"&gt;
-      &lt;el-table-column label="会议室"&gt;
-        &lt;template #default="{ row }"&gt;{{ row.room?.name }}&lt;/template&gt;
-      &lt;/el-table-column&gt;
-      &lt;el-table-column prop="name" label="预订人" width="120" /&gt;
-      &lt;el-table-column prop="phone" label="手机号" width="130" /&gt;
-      &lt;el-table-column prop="date" label="日期" width="120" /&gt;
-      &lt;el-table-column label="时间段" width="140"&gt;
-        &lt;template #default="{ row }"&gt;{{ row.start_time }} - {{ row.end_time }}&lt;/template&gt;
-      &lt;/el-table-column&gt;
-      &lt;el-table-column prop="purpose" label="用途" show-overflow-tooltip /&gt;
-      &lt;el-table-column label="状态" width="100"&gt;
-        &lt;template #default="{ row }"&gt;
-          &lt;el-tag :type="row.status === 1 ? 'success' : 'danger'"&gt;
+    <el-table :data="bookings" stripe style="width: 100%">
+      <el-table-column label="会议室">
+        <template #default="{ row }">{{ row.room?.name }}</template>
+      </el-table-column>
+      <el-table-column prop="name" label="预订人" width="120" />
+      <el-table-column prop="phone" label="手机号" width="130" />
+      <el-table-column prop="date" label="日期" width="120" />
+      <el-table-column label="时间段" width="140">
+        <template #default="{ row }">{{ row.start_time }} - {{ row.end_time }}</template>
+      </el-table-column>
+      <el-table-column prop="purpose" label="用途" show-overflow-tooltip />
+      <el-table-column label="状态" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 1 ? 'success' : 'danger'">
             {{ row.status === 1 ? '已预订' : '已取消' }}
-          &lt;/el-tag&gt;
-        &lt;/template&gt;
-      &lt;/el-table-column&gt;
-      &lt;el-table-column prop="cancel_reason" label="取消原因" show-overflow-tooltip /&gt;
-      &lt;el-table-column label="操作" width="120"&gt;
-        &lt;template #default="{ row }"&gt;
-          &lt;el-button v-if="row.status === 1" size="small" type="danger" @click="handleCancel(row)"&gt;取消&lt;/el-button&gt;
-        &lt;/template&gt;
-      &lt;/el-table-column&gt;
-    &lt;/el-table&gt;
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="cancel_reason" label="取消原因" show-overflow-tooltip />
+      <el-table-column label="操作" width="120">
+        <template #default="{ row }">
+          <el-button v-if="row.status === 1" size="small" type="danger" @click="handleCancel(row)">取消</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-    &lt;div class="pagination"&gt;
-      &lt;el-pagination
+    <div class="pagination">
+      <el-pagination
         v-model:current-page="page"
         :page-size="pageSize"
         :total="total"
         @current-change="fetchBookings"
         layout="total, prev, pager, next"
-      /&gt;
-    &lt;/div&gt;
+      />
+    </div>
 
-    &lt;el-dialog v-model="cancelDialogVisible" title="取消预订" width="500px"&gt;
-      &lt;el-form :model="cancelForm" label-width="80px"&gt;
-        &lt;el-form-item label="取消原因"&gt;
-          &lt;el-input v-model="cancelForm.cancel_reason" type="textarea" :rows="4" placeholder="请输入取消原因" /&gt;
-        &lt;/el-form-item&gt;
-      &lt;/el-form&gt;
-      &lt;template #footer&gt;
-        &lt;el-button @click="cancelDialogVisible = false"&gt;取消&lt;/el-button&gt;
-        &lt;el-button type="primary" @click="confirmCancel" :loading="canceling"&gt;确定&lt;/el-button&gt;
-      &lt;/template&gt;
-    &lt;/el-dialog&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+    <el-dialog v-model="cancelDialogVisible" title="取消预订" width="500px">
+      <el-form :model="cancelForm" label-width="80px">
+        <el-form-item label="取消原因">
+          <el-input v-model="cancelForm.cancel_reason" type="textarea" :rows="4" placeholder="请输入取消原因" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="cancelDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmCancel" :loading="canceling">确定</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
 const authStore = useAuthStore()
 const bookings = ref([])
@@ -86,7 +85,7 @@ const canceling = ref(false)
 const cancelingBooking = ref(null)
 const cancelForm = ref({ cancel_reason: '' })
 
-const fetchBookings = async () =&gt; {
+const fetchBookings = async () => {
   const params = {
     page: page.value,
     page_size: pageSize.value
@@ -94,23 +93,31 @@ const fetchBookings = async () =&gt; {
   if (filterDate.value) params.date = filterDate.value
   if (filterRoom.value) params.room_id = filterRoom.value
   if (filterStatus.value) params.status = filterStatus.value
-  const res = await authStore.api.get('/bookings', { params })
-  bookings.value = res.data.list
-  total.value = res.data.total
+  try {
+    const res = await authStore.api.get('/bookings', { params })
+    bookings.value = res.data.list
+    total.value = res.data.total
+  } catch (e) {
+    console.error(e)
+  }
 }
 
-const fetchRooms = async () =&gt; {
-  const res = await authStore.api.get('/rooms')
-  rooms.value = res.data
+const fetchRooms = async () => {
+  try {
+    const res = await authStore.api.get('/rooms')
+    rooms.value = res.data
+  } catch (e) {
+    console.error(e)
+  }
 }
 
-const handleCancel = (booking) =&gt; {
+const handleCancel = (booking) => {
   cancelingBooking.value = booking
   cancelForm.value.cancel_reason = ''
   cancelDialogVisible.value = true
 }
 
-const confirmCancel = async () =&gt; {
+const confirmCancel = async () => {
   if (!cancelForm.value.cancel_reason) {
     ElMessage.warning('请输入取消原因')
     return
@@ -128,13 +135,13 @@ const confirmCancel = async () =&gt; {
   }
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   fetchBookings()
   fetchRooms()
 })
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .bookings {
   background: #1e293b;
   border-radius: 12px;
@@ -163,5 +170,4 @@ onMounted(() =&gt; {
   display: flex;
   justify-content: flex-end;
 }
-&lt;/style&gt;
-
+</style>
