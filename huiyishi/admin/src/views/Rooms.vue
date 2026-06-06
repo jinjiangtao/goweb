@@ -66,10 +66,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import api from '../api'
 
-const authStore = useAuthStore()
 const rooms = ref([])
 const search = ref('')
 const dialogVisible = ref(false)
@@ -90,7 +89,7 @@ const filteredRooms = computed(() => {
 
 const fetchRooms = async () => {
   try {
-    const res = await authStore.api.get('/rooms')
+    const res = await api.get('/rooms')
     rooms.value = res.data
   } catch (e) {
     console.error(e)
@@ -118,9 +117,9 @@ const handleSave = async () => {
   saving.value = true
   try {
     if (editingRoom.value) {
-      await authStore.api.put(`/rooms/${editingRoom.value.id}`, form.value)
+      await api.put(`/rooms/${editingRoom.value.id}`, form.value)
     } else {
-      await authStore.api.post('/rooms', form.value)
+      await api.post('/rooms', form.value)
     }
     ElMessage.success('保存成功')
     dialogVisible.value = false
@@ -135,7 +134,7 @@ const handleSave = async () => {
 const handleDelete = async (room) => {
   try {
     await ElMessageBox.confirm('确定要删除该会议室吗?', '提示', { type: 'warning' })
-    await authStore.api.delete(`/rooms/${room.id}`)
+    await api.delete(`/rooms/${room.id}`)
     ElMessage.success('删除成功')
     fetchRooms()
   } catch (error) {

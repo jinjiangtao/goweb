@@ -68,10 +68,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
 import { ElMessage } from 'element-plus'
+import api from '../api'
 
-const authStore = useAuthStore()
 const bookings = ref([])
 const rooms = ref([])
 const page = ref(1)
@@ -94,7 +93,7 @@ const fetchBookings = async () => {
   if (filterRoom.value) params.room_id = filterRoom.value
   if (filterStatus.value) params.status = filterStatus.value
   try {
-    const res = await authStore.api.get('/bookings', { params })
+    const res = await api.get('/bookings', { params })
     bookings.value = res.data.list
     total.value = res.data.total
   } catch (e) {
@@ -104,7 +103,7 @@ const fetchBookings = async () => {
 
 const fetchRooms = async () => {
   try {
-    const res = await authStore.api.get('/rooms')
+    const res = await api.get('/rooms')
     rooms.value = res.data
   } catch (e) {
     console.error(e)
@@ -124,7 +123,7 @@ const confirmCancel = async () => {
   }
   canceling.value = true
   try {
-    await authStore.api.put(`/bookings/${cancelingBooking.value.id}/cancel`, cancelForm.value)
+    await api.put(`/bookings/${cancelingBooking.value.id}/cancel`, cancelForm.value)
     ElMessage.success('取消成功')
     cancelDialogVisible.value = false
     fetchBookings()

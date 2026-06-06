@@ -26,10 +26,9 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { useAuthStore } from '../stores/auth'
 import * as echarts from 'echarts'
+import api from '../api'
 
-const authStore = useAuthStore()
 const stats = ref({})
 const dailyChart = ref(null)
 const roomChart = ref(null)
@@ -38,7 +37,7 @@ let roomChartInstance = null
 
 const fetchStats = async () => {
   try {
-    const res = await authStore.api.get('/stats')
+    const res = await api.get('/stats')
     stats.value = res.data
     nextTick(() => {
       renderCharts()
