@@ -7,8 +7,8 @@ import (
 	"huiyishi-server/models"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"github.com/glebarez/sqlite"
 )
 
 var DB *gorm.DB
