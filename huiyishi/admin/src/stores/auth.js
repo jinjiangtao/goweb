@@ -1,0 +1,50 @@
+
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: 'http://localhost:8080/api/admin',
+  timeout: 10000
+})
+
+api.interceptors.request.use(config =&gt; {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  response =&gt; response,
+  error =&gt; {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+export const useAuthStore = defineStore('auth', () =&gt; {
+  const token = ref(localStorage.getItem('token') || '')
+  const admin = ref(JSON.parse(localStorage.getItem('admin') || 'null'))
+
+  const setAuth = (newToken, newAdmin) =&gt; {
+    token.value = newToken
+    admin.value = newAdmin
+    localStorage.setItem('token', newToken)
+    localStorage.setItem('admin', JSON.stringify(newAdmin))
+  }
+
+  const logout = () =&gt; {
+    token.value = ''
+    admin.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('admin')
+  }
+
+  return { token, admin, setAuth, logout, api }
+})
+
