@@ -1,4 +1,3 @@
-
 package handlers
 
 import (
@@ -292,8 +291,7 @@ func GetRooms(c *gin.Context) {
 	var rooms []models.Room
 	query := database.DB.Order("id desc")
 
-	if search != "" {
-		query = query.Where("name LIKE ?", "%"+search+"%")
+	if search != "" {query = query.Where("name LIKE ?", "%"+search+"%")
 	}
 
 	query.Find(&rooms)
