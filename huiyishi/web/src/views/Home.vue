@@ -22,7 +22,9 @@
           </div>
           <div class="devices">
             <div class="device-item" v-for="device in parseDevices(room.devices)" :key="device">
-              <el-icon :size="16">{{ getDeviceIcon(device) }}</el-icon>
+              <el-icon :size="16">
+                <component :is="getDeviceIcon(device)" />
+              </el-icon>
               <span>{{ device }}</span>
             </div>
           </div>
@@ -180,7 +182,14 @@ function parseDevices(devicesStr) {
   if (!devicesStr) return []
   try {
     const parsed = JSON.parse(devicesStr)
-    if (Array.isArray(parsed)) return parsed
+    if (Array.isArray(parsed)) {
+      return parsed.map(d => {
+        if (typeof d === 'string') return d
+        if (d.name) return d.name
+        if (d.label) return d.label
+        return String(d)
+      })
+    }
     return []
   } catch {
     return devicesStr.split(',').map(d => d.trim()).filter(d => d)
