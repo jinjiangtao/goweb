@@ -23,7 +23,15 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	r.POST("/api/admin/login", handlers.Login)
+	r.POST("/api/admin/login", handlers.AdminLogin)
+	r.POST("/api/login", handlers.UserLogin)
+	r.POST("/api/register", handlers.UserRegister)
+
+	user := r.Group("/api")
+	user.Use(middleware.UserAuth())
+	{
+		user.GET("/user/info", handlers.GetUserInfo)
+	}
 
 	admin := r.Group("/api/admin")
 	admin.Use(middleware.JWTAuth())
@@ -37,15 +45,22 @@ func main() {
 		admin.PUT("/bookings/:id/cancel", handlers.CancelBooking)
 
 		admin.GET("/stats", handlers.GetStats)
+
+		admin.GET("/users", handlers.GetUsers)
+		admin.POST("/users", handlers.CreateUser)
+		admin.PUT("/users/:id", handlers.UpdateUser)
+		admin.PUT("/users/:id/toggle-status", handlers.ToggleUserStatus)
+		admin.PUT("/users/:id/reset-password", handlers.ResetUserPassword)
+		admin.DELETE("/users/:id", handlers.DeleteUser)
 	}
 
 	public := r.Group("/api")
 	{
 		public.GET("/rooms", handlers.PublicGetRooms)
 		public.GET("/rooms/:id/available", handlers.PublicGetRoomAvailable)
-		public.POST("/bookings", handlers.PublicCreateBooking)
-		public.GET("/bookings/my", handlers.PublicGetMyBookings)
-		public.DELETE("/bookings/:id", handlers.PublicCancelBooking)
+		public.POST("/bookings", middleware.OptionalAuth(), handlers.PublicCreateBooking)
+		public.GET("/bookings/my", middleware.OptionalAuth(), handlers.PublicGetMyBookings)
+		public.DELETE("/bookings/:id", middleware.OptionalAuth(), handlers.PublicCancelBooking)
 	}
 
 	log.Println("Server starting on :8080")

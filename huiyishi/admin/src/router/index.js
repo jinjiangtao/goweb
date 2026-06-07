@@ -1,3 +1,4 @@
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import Login from '../views/Login.vue'
@@ -5,6 +6,7 @@ import Layout from '../views/Layout.vue'
 import Rooms from '../views/Rooms.vue'
 import Bookings from '../views/Bookings.vue'
 import Stats from '../views/Stats.vue'
+import Users from '../views/Users.vue'
 
 const routes = [
   { path: '/login', component: Login },
@@ -15,7 +17,8 @@ const routes = [
     children: [
       { path: 'stats', component: Stats },
       { path: 'rooms', component: Rooms },
-      { path: 'bookings', component: Bookings }
+      { path: 'bookings', component: Bookings },
+      { path: 'users', component: Users }
     ]
   }
 ]
@@ -25,11 +28,11 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from, next) =&gt; {
   const authStore = useAuthStore()
-  if (to.path !== '/login' && !authStore.token) {
+  if (to.path !== '/login' &amp;&amp; !authStore.token) {
     next('/login')
-  } else if (to.path === '/login' && authStore.token) {
+  } else if (to.path === '/login' &amp;&amp; authStore.token) {
     next('/')
   } else {
     next()

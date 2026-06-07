@@ -1,121 +1,123 @@
-<template>
-  <div class="home">
-    <div class="banner">
-      <h1>会议室预订</h1>
-      <p>高效协作，从订会议室开始</p>
-    </div>
 
-    <div class="content">
-      <div class="section-title">
-        <el-icon><OfficeBuilding /></el-icon>
-        <span>选择会议室</span>
-      </div>
+&lt;template&gt;
+  &lt;div class="home"&gt;
+    &lt;div class="banner"&gt;
+      &lt;div class="banner-top"&gt;
+        &lt;h1&gt;会议室预订&lt;/h1&gt;
+        &lt;el-button text class="logout-btn" @click="handleLogout"&gt;
+          &lt;el-icon&gt;&lt;SwitchButton /&gt;&lt;/el-icon&gt;
+          退出
+        &lt;/el-button&gt;
+      &lt;/div&gt;
+      &lt;p&gt;高效协作，从订会议室开始&lt;/p&gt;
+      &lt;p class="user-info"&gt;欢迎你，{{ user?.real_name }}&lt;/p&gt;
+    &lt;/div&gt;
 
-      <div class="room-list" v-loading="loading">
-        <div class="room-card" v-for="room in rooms" :key="room.id">
-          <div class="room-header">
-            <h3>{{ room.name }}</h3>
-            <div class="capacity">
-              <el-icon><User /></el-icon>
-              <span>可容纳 {{ room.capacity }} 人</span>
-            </div>
-          </div>
-          <div class="devices">
-            <div class="device-item" v-for="device in parseDevices(room.devices)" :key="device">
-              <el-icon :size="16">
-                <component :is="getDeviceIcon(device)" />
-              </el-icon>
-              <span>{{ device }}</span>
-            </div>
-          </div>
-          <el-button type="primary" class="book-btn" @click="openBookingDrawer(room)">立即预订</el-button>
-        </div>
-      </div>
-    </div>
+    &lt;div class="content"&gt;
+      &lt;div class="section-title"&gt;
+        &lt;el-icon&gt;&lt;OfficeBuilding /&gt;&lt;/el-icon&gt;
+        &lt;span&gt;选择会议室&lt;/span&gt;
+      &lt;/div&gt;
 
-    <div class="footer-btn">
-      <el-button type="primary" class="my-bookings-btn" @click="$router.push('/my-bookings')">
-        <el-icon><Document /></el-icon>
+      &lt;div class="room-list" v-loading="loading"&gt;
+        &lt;div class="room-card" v-for="room in rooms" :key="room.id"&gt;
+          &lt;div class="room-header"&gt;
+            &lt;h3&gt;{{ room.name }}&lt;/h3&gt;
+            &lt;div class="capacity"&gt;
+              &lt;el-icon&gt;&lt;User /&gt;&lt;/el-icon&gt;
+              &lt;span&gt;可容纳 {{ room.capacity }} 人&lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="devices"&gt;
+            &lt;div class="device-item" v-for="device in parseDevices(room.devices)" :key="device"&gt;
+              &lt;el-icon :size="16"&gt;
+                &lt;component :is="getDeviceIcon(device)" /&gt;
+              &lt;/el-icon&gt;
+              &lt;span&gt;{{ device }}&lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;el-button type="primary" class="book-btn" @click="openBookingDrawer(room)"&gt;立即预订&lt;/el-button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="footer-btn"&gt;
+      &lt;el-button type="primary" class="my-bookings-btn" @click="$router.push('/my-bookings')"&gt;
+        &lt;el-icon&gt;&lt;Document /&gt;&lt;/el-icon&gt;
         我的预订
-      </el-button>
-    </div>
+      &lt;/el-button&gt;
+    &lt;/div&gt;
 
-    <el-drawer
+    &lt;el-drawer
       v-model="drawerVisible"
       title="预订会议室"
       direction="btt"
       size="80%"
-    >
-      <div class="booking-form">
-        <el-form :model="form" ref="formRef" :rules="rules" label-width="80px">
-          <el-alert
+    &gt;
+      &lt;div class="booking-form"&gt;
+        &lt;el-form :model="form" ref="formRef" :rules="rules" label-width="80px"&gt;
+          &lt;el-alert
             :title="'预订会议室：' + selectedRoom?.name"
             type="info"
             :closable="false"
             show-icon
             style="margin-bottom: 20px;"
-          />
-          <el-form-item label="姓名" prop="name">
-            <el-input v-model="form.name" placeholder="请输入姓名" />
-          </el-form-item>
-          <el-form-item label="手机号" prop="phone">
-            <el-input v-model="form.phone" placeholder="请输入11位手机号" maxlength="11" />
-          </el-form-item>
-          <el-form-item label="日期" prop="date">
-            <el-date-picker
+          /&gt;
+          &lt;el-form-item label="日期" prop="date"&gt;
+            &lt;el-date-picker
               v-model="form.date"
               type="date"
               placeholder="选择日期"
               :disabled-date="disabledDate"
               value-format="YYYY-MM-DD"
               style="width: 100%;"
-            />
-          </el-form-item>
-          <el-form-item label="开始时间" prop="startTime">
-            <el-select v-model="form.startTime" placeholder="选择开始时间" style="width: 100%;">
-              <el-option
+            /&gt;
+          &lt;/el-form-item&gt;
+          &lt;el-form-item label="开始时间" prop="startTime"&gt;
+            &lt;el-select v-model="form.startTime" placeholder="选择开始时间" style="width: 100%;"&gt;
+              &lt;el-option
                 v-for="time in timeOptions"
                 :key="time"
                 :label="time"
                 :value="time"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="结束时间" prop="endTime">
-            <el-select v-model="form.endTime" placeholder="选择结束时间" style="width: 100%;">
-              <el-option
+              /&gt;
+            &lt;/el-select&gt;
+          &lt;/el-form-item&gt;
+          &lt;el-form-item label="结束时间" prop="endTime"&gt;
+            &lt;el-select v-model="form.endTime" placeholder="选择结束时间" style="width: 100%;"&gt;
+              &lt;el-option
                 v-for="time in filteredEndTimes"
                 :key="time"
                 :label="time"
                 :value="time"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="用途" prop="purpose">
-            <el-input
+              /&gt;
+            &lt;/el-select&gt;
+          &lt;/el-form-item&gt;
+          &lt;el-form-item label="用途" prop="purpose"&gt;
+            &lt;el-input
               v-model="form.purpose"
               type="textarea"
               :rows="3"
               placeholder="请输入预订用途（选填）"
-            />
-          </el-form-item>
-        </el-form>
+            /&gt;
+          &lt;/el-form-item&gt;
+        &lt;/el-form&gt;
 
-        <div class="form-buttons">
-          <el-button @click="drawerVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitting" @click="submitBooking">提交预订</el-button>
-        </div>
-      </div>
-    </el-drawer>
-  </div>
-</template>
+        &lt;div class="form-buttons"&gt;
+          &lt;el-button @click="drawerVisible = false"&gt;取消&lt;/el-button&gt;
+          &lt;el-button type="primary" :loading="submitting" @click="submitBooking"&gt;提交预订&lt;/el-button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/el-drawer&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
 
-<script setup>
+&lt;script setup&gt;
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { OfficeBuilding, User, Document, Monitor, VideoCamera, DataBoard, Phone } from '@element-plus/icons-vue'
-import api from '../api'
+import { OfficeBuilding, User, Document, Monitor, VideoCamera, DataBoard, Phone, SwitchButton } from '@element-plus/icons-vue'
+import api, { setAuthToken } from '../api'
 
 const router = useRouter()
 const loading = ref(false)
@@ -124,10 +126,9 @@ const drawerVisible = ref(false)
 const rooms = ref([])
 const selectedRoom = ref(null)
 const formRef = ref(null)
+const user = ref(null)
 
 const form = reactive({
-  name: '',
-  phone: '',
   date: '',
   startTime: '',
   endTime: '',
@@ -135,11 +136,6 @@ const form = reactive({
 })
 
 const rules = {
-  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^\d{11}$/, message: '请输入11位手机号', trigger: 'blur' }
-  ],
   date: [{ required: true, message: '请选择日期', trigger: 'change' }],
   startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
   endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
@@ -147,35 +143,38 @@ const rules = {
 
 const timeOptions = ref([])
 
-onMounted(() => {
+onMounted(() =&gt; {
   generateTimeOptions()
   fetchRooms()
-  
-  const savedPhone = localStorage.getItem('bookingPhone')
-  if (savedPhone) {
-    form.phone = savedPhone
-  }
+  getUserInfo()
 })
+
+function getUserInfo() {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    user.value = JSON.parse(userStr)
+  }
+}
 
 function generateTimeOptions() {
   const options = []
-  for (let hour = 9; hour <= 18; hour++) {
+  for (let hour = 9; hour &lt;= 18; hour++) {
     options.push(`${hour.toString().padStart(2, '0')}:00`)
-    if (hour < 18) {
+    if (hour &lt; 18) {
       options.push(`${hour.toString().padStart(2, '0')}:30`)
     }
   }
   timeOptions.value = options
 }
 
-const filteredEndTimes = computed(() => {
+const filteredEndTimes = computed(() =&gt; {
   if (!form.startTime) return timeOptions.value
   const startIndex = timeOptions.value.indexOf(form.startTime)
   return timeOptions.value.slice(startIndex + 1)
 })
 
 function disabledDate(time) {
-  return time.getTime() < Date.now() - 8.64e7
+  return time.getTime() &lt; Date.now() - 8.64e7
 }
 
 function parseDevices(devicesStr) {
@@ -183,7 +182,7 @@ function parseDevices(devicesStr) {
   try {
     const parsed = JSON.parse(devicesStr)
     if (Array.isArray(parsed)) {
-      return parsed.map(d => {
+      return parsed.map(d =&gt; {
         if (typeof d === 'string') return d
         if (d.name) return d.name
         if (d.label) return d.label
@@ -192,7 +191,7 @@ function parseDevices(devicesStr) {
     }
     return []
   } catch {
-    return devicesStr.split(',').map(d => d.trim()).filter(d => d)
+    return devicesStr.split(',').map(d =&gt; d.trim()).filter(d =&gt; d)
   }
 }
 
@@ -220,17 +219,10 @@ async function fetchRooms() {
 
 function openBookingDrawer(room) {
   selectedRoom.value = room
-  form.name = ''
   form.date = ''
   form.startTime = ''
   form.endTime = ''
   form.purpose = ''
-  
-  const savedPhone = localStorage.getItem('bookingPhone')
-  if (savedPhone) {
-    form.phone = savedPhone
-  }
-  
   drawerVisible.value = true
 }
 
@@ -247,15 +239,11 @@ async function submitBooking() {
   try {
     await api.post('/bookings', {
       room_id: selectedRoom.value.id,
-      name: form.name,
-      phone: form.phone,
       date: form.date,
       start_time: form.startTime,
       end_time: form.endTime,
       purpose: form.purpose
     })
-
-    localStorage.setItem('bookingPhone', form.phone)
 
     ElMessage.success('预订成功！')
     drawerVisible.value = false
@@ -268,18 +256,35 @@ async function submitBooking() {
         cancelButtonText: '留在首页',
         type: 'success'
       }
-    ).then(() => {
+    ).then(() =&gt; {
       router.push('/my-bookings')
-    }).catch(() => {})
+    }).catch(() =&gt; {})
   } catch (error) {
     ElMessage.error(error.response?.data?.error || '预订失败')
   } finally {
     submitting.value = false
   }
 }
-</script>
 
-<style scoped>
+function handleLogout() {
+  ElMessageBox.confirm(
+    '确定要退出登录吗？',
+    '提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() =&gt; {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setAuthToken(null)
+    router.push('/login')
+  }).catch(() =&gt; {})
+}
+&lt;/script&gt;
+
+&lt;style scoped&gt;
 .home {
   min-height: 100vh;
   padding-bottom: 80px;
@@ -287,18 +292,38 @@ async function submitBooking() {
 
 .banner {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-  padding: 30px 20px;
+  padding: 20px;
   color: white;
 }
 
+.banner-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .banner h1 {
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 8px;
 }
 
 .banner p {
   font-size: 14px;
   opacity: 0.9;
+}
+
+.user-info {
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.logout-btn {
+  color: white;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .content {
@@ -408,4 +433,5 @@ async function submitBooking() {
   flex: 1;
   border-radius: 6px;
 }
-</style>
+&lt;/style&gt;
+

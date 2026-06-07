@@ -1,14 +1,13 @@
-
 package database
 
 import (
+	"huiyishi-server/models"
 	"log"
 	"time"
-	"huiyishi-server/models"
 
+	"github.com/glebarez/sqlite"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"github.com/glebarez/sqlite"
 )
 
 var DB *gorm.DB
@@ -20,7 +19,7 @@ func InitDB() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	DB.AutoMigrate(&models.Admin{}, &models.Room{}, &models.Booking{})
+	DB.AutoMigrate(&models.Admin{}, &models.Room{}, &models.Booking{}, &models.User{})
 
 	var count int64
 	DB.Model(&models.Admin{}).Count(&count)
@@ -34,5 +33,20 @@ func InitDB() {
 		}
 		DB.Create(&admin)
 		log.Println("Default admin created: admin/123456")
+	}
+
+	DB.Model(&models.User{}).Count(&count)
+	if count == 0 {
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+		user := models.User{
+			Username:  "test",
+			Password:  string(hashedPassword),
+			RealName:  "测试用户",
+			Phone:     "13800138000",
+			Status:    1,
+			CreatedAt: time.Now(),
+		}
+		DB.Create(&user)
+		log.Println("Default test user created: test/123456")
 	}
 }

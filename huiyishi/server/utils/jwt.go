@@ -12,12 +12,26 @@ var jwtSecret = []byte("huiyishi-secret-key-2024")
 
 type Claims struct {
 	AdminID uint   `json:"admin_id"`
+	UserID  uint   `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
 func GenerateToken(adminID uint) (string, error) {
 	claims := Claims{
 		AdminID: adminID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecret)
+}
+
+func GenerateUserToken(userID uint) (string, error) {
+	claims := Claims{
+		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

@@ -1,108 +1,72 @@
-<template>
-  <div class="my-bookings">
-    <div class="header">
-      <el-button text @click="$router.back()" class="back-btn">
-        <el-icon><ArrowLeft /></el-icon>
-      </el-button>
-      <h1>我的预订</h1>
-      <div style="width: 32px;"></div>
-    </div>
 
-    <div class="phone-input-section" v-if="!phone">
-      <el-input
-        v-model="inputPhone"
-        placeholder="请输入手机号查询预订"
-        maxlength="11"
-        clearable
-        @keyup.enter="fetchBookings"
-      >
-        <template #append>
-          <el-button :loading="loading" @click="fetchBookings">查询</el-button>
-        </template>
-      </el-input>
-    </div>
+&lt;template&gt;
+  &lt;div class="my-bookings"&gt;
+    &lt;div class="header"&gt;
+      &lt;el-button text @click="$router.back()" class="back-btn"&gt;
+        &lt;el-icon&gt;&lt;ArrowLeft /&gt;&lt;/el-icon&gt;
+      &lt;/el-button&gt;
+      &lt;h1&gt;我的预订&lt;/h1&gt;
+      &lt;div style="width: 32px;"&gt;&lt;/div&gt;
+    &lt;/div&gt;
 
-    <div class="content" v-if="phone">
-      <div class="phone-display">
-        <span>当前查询手机号：{{ phone }}</span>
-        <el-button link type="primary" @click="phone = ''">切换</el-button>
-      </div>
+    &lt;div class="content"&gt;
+      &lt;div class="booking-list" v-loading="loading"&gt;
+        &lt;el-empty v-if="!loading &amp;&amp; bookings.length === 0" description="暂无预订记录" /&gt;
 
-      <div class="booking-list" v-loading="loading">
-        <el-empty v-if="!loading && bookings.length === 0" description="暂无预订记录" />
-
-        <div class="booking-card" v-for="booking in bookings" :key="booking.id">
-          <div class="booking-header">
-            <div class="room-name">{{ booking.room?.name || '会议室' }}</div>
-            <el-tag :type="booking.status === 1 ? 'success' : 'info'" size="small">
+        &lt;div class="booking-card" v-for="booking in bookings" :key="booking.id"&gt;
+          &lt;div class="booking-header"&gt;
+            &lt;div class="room-name"&gt;{{ booking.room?.name || '会议室' }}&lt;/div&gt;
+            &lt;el-tag :type="booking.status === 1 ? 'success' : 'info'" size="small"&gt;
               {{ booking.status === 1 ? '已预订' : '已取消' }}
-            </el-tag>
-          </div>
-          <div class="booking-info">
-            <div class="info-item">
-              <el-icon><Calendar /></el-icon>
-              <span>{{ booking.date }}</span>
-            </div>
-            <div class="info-item">
-              <el-icon><Clock /></el-icon>
-              <span>{{ booking.start_time }} - {{ booking.end_time }}</span>
-            </div>
-            <div class="info-item" v-if="booking.purpose">
-              <el-icon><Document /></el-icon>
-              <span>{{ booking.purpose }}</span>
-            </div>
-          </div>
-          <div class="booking-actions" v-if="booking.status === 1">
-            <el-button type="danger" size="small" @click="cancelBooking(booking)">取消预订</el-button>
-          </div>
-        </div>
-      </div>
-    </div>
+            &lt;/el-tag&gt;
+          &lt;/div&gt;
+          &lt;div class="booking-info"&gt;
+            &lt;div class="info-item"&gt;
+              &lt;el-icon&gt;&lt;Calendar /&gt;&lt;/el-icon&gt;
+              &lt;span&gt;{{ booking.date }}&lt;/span&gt;
+            &lt;/div&gt;
+            &lt;div class="info-item"&gt;
+              &lt;el-icon&gt;&lt;Clock /&gt;&lt;/el-icon&gt;
+              &lt;span&gt;{{ booking.start_time }} - {{ booking.end_time }}&lt;/span&gt;
+            &lt;/div&gt;
+            &lt;div class="info-item" v-if="booking.purpose"&gt;
+              &lt;el-icon&gt;&lt;Document /&gt;&lt;/el-icon&gt;
+              &lt;span&gt;{{ booking.purpose }}&lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="booking-actions" v-if="booking.status === 1"&gt;
+            &lt;el-button type="danger" size="small" @click="cancelBooking(booking)"&gt;取消预订&lt;/el-button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
 
-    <div class="footer-btn" v-if="phone">
-      <el-button type="primary" class="back-home-btn" @click="$router.push('/')">
-        <el-icon><House /></el-icon>
+    &lt;div class="footer-btn"&gt;
+      &lt;el-button type="primary" class="back-home-btn" @click="$router.push('/')"&gt;
+        &lt;el-icon&gt;&lt;House /&gt;&lt;/el-icon&gt;
         返回预订
-      </el-button>
-    </div>
-  </div>
-</template>
+      &lt;/el-button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
 
-<script setup>
+&lt;script setup&gt;
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Calendar, Clock, Document, House } from '@element-plus/icons-vue'
 import api from '../api'
 
-const phone = ref('')
-const inputPhone = ref('')
 const loading = ref(false)
 const bookings = ref([])
 
-onMounted(() => {
-  const savedPhone = localStorage.getItem('bookingPhone')
-  if (savedPhone) {
-    phone.value = savedPhone
-    inputPhone.value = savedPhone
-    fetchBookings()
-  }
+onMounted(() =&gt; {
+  fetchBookings()
 })
 
 async function fetchBookings() {
-  if (!inputPhone.value) {
-    ElMessage.warning('请输入手机号')
-    return
-  }
-  
-  if (!/^\d{11}$/.test(inputPhone.value)) {
-    ElMessage.warning('请输入11位手机号')
-    return
-  }
-
-  phone.value = inputPhone.value
   loading.value = true
   try {
-    const res = await api.get('/bookings/my', { params: { phone: phone.value } })
+    const res = await api.get('/bookings/my')
     bookings.value = res.data
   } catch (error) {
     ElMessage.error('获取预订记录失败')
@@ -127,16 +91,16 @@ async function cancelBooking(booking) {
   }
 
   try {
-    await api.delete(`/bookings/${booking.id}`, { params: { phone: phone.value } })
+    await api.delete(`/bookings/${booking.id}`)
     ElMessage.success('取消成功')
     fetchBookings()
   } catch (error) {
     ElMessage.error(error.response?.data?.error || '取消失败')
   }
 }
-</script>
+&lt;/script&gt;
 
-<style scoped>
+&lt;style scoped&gt;
 .my-bookings {
   min-height: 100vh;
   padding-bottom: 80px;
@@ -164,20 +128,6 @@ async function cancelBooking(booking) {
 .header h1 {
   font-size: 18px;
   font-weight: 600;
-}
-
-.phone-input-section {
-  padding: 20px;
-}
-
-.phone-display {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  background: var(--bg-gray);
-  font-size: 14px;
-  color: var(--text-secondary);
 }
 
 .content {
@@ -252,4 +202,5 @@ async function cancelBooking(booking) {
 .back-home-btn:hover {
   background-color: var(--primary-light) !important;
 }
-</style>
+&lt;/style&gt;
+
