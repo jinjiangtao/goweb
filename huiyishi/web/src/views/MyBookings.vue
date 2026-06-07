@@ -1,56 +1,55 @@
+<template>
+  <div class="my-bookings">
+    <div class="header">
+      <el-button text @click="$router.back()" class="back-btn">
+        <el-icon><ArrowLeft /></el-icon>
+      </el-button>
+      <h1>我的预订</h1>
+      <div style="width: 32px;"></div>
+    </div>
 
-&lt;template&gt;
-  &lt;div class="my-bookings"&gt;
-    &lt;div class="header"&gt;
-      &lt;el-button text @click="$router.back()" class="back-btn"&gt;
-        &lt;el-icon&gt;&lt;ArrowLeft /&gt;&lt;/el-icon&gt;
-      &lt;/el-button&gt;
-      &lt;h1&gt;我的预订&lt;/h1&gt;
-      &lt;div style="width: 32px;"&gt;&lt;/div&gt;
-    &lt;/div&gt;
+    <div class="content">
+      <div class="booking-list" v-loading="loading">
+        <el-empty v-if="!loading && bookings.length === 0" description="暂无预订记录" />
 
-    &lt;div class="content"&gt;
-      &lt;div class="booking-list" v-loading="loading"&gt;
-        &lt;el-empty v-if="!loading &amp;&amp; bookings.length === 0" description="暂无预订记录" /&gt;
-
-        &lt;div class="booking-card" v-for="booking in bookings" :key="booking.id"&gt;
-          &lt;div class="booking-header"&gt;
-            &lt;div class="room-name"&gt;{{ booking.room?.name || '会议室' }}&lt;/div&gt;
-            &lt;el-tag :type="booking.status === 1 ? 'success' : 'info'" size="small"&gt;
+        <div class="booking-card" v-for="booking in bookings" :key="booking.id">
+          <div class="booking-header">
+            <div class="room-name">{{ booking.room?.name || '会议室' }}</div>
+            <el-tag :type="booking.status === 1 ? 'success' : 'info'" size="small">
               {{ booking.status === 1 ? '已预订' : '已取消' }}
-            &lt;/el-tag&gt;
-          &lt;/div&gt;
-          &lt;div class="booking-info"&gt;
-            &lt;div class="info-item"&gt;
-              &lt;el-icon&gt;&lt;Calendar /&gt;&lt;/el-icon&gt;
-              &lt;span&gt;{{ booking.date }}&lt;/span&gt;
-            &lt;/div&gt;
-            &lt;div class="info-item"&gt;
-              &lt;el-icon&gt;&lt;Clock /&gt;&lt;/el-icon&gt;
-              &lt;span&gt;{{ booking.start_time }} - {{ booking.end_time }}&lt;/span&gt;
-            &lt;/div&gt;
-            &lt;div class="info-item" v-if="booking.purpose"&gt;
-              &lt;el-icon&gt;&lt;Document /&gt;&lt;/el-icon&gt;
-              &lt;span&gt;{{ booking.purpose }}&lt;/span&gt;
-            &lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div class="booking-actions" v-if="booking.status === 1"&gt;
-            &lt;el-button type="danger" size="small" @click="cancelBooking(booking)"&gt;取消预订&lt;/el-button&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+            </el-tag>
+          </div>
+          <div class="booking-info">
+            <div class="info-item">
+              <el-icon><Calendar /></el-icon>
+              <span>{{ booking.date }}</span>
+            </div>
+            <div class="info-item">
+              <el-icon><Clock /></el-icon>
+              <span>{{ booking.start_time }} - {{ booking.end_time }}</span>
+            </div>
+            <div class="info-item" v-if="booking.purpose">
+              <el-icon><Document /></el-icon>
+              <span>{{ booking.purpose }}</span>
+            </div>
+          </div>
+          <div class="booking-actions" v-if="booking.status === 1">
+            <el-button type="danger" size="small" @click="cancelBooking(booking)">取消预订</el-button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    &lt;div class="footer-btn"&gt;
-      &lt;el-button type="primary" class="back-home-btn" @click="$router.push('/')"&gt;
-        &lt;el-icon&gt;&lt;House /&gt;&lt;/el-icon&gt;
+    <div class="footer-btn">
+      <el-button type="primary" class="back-home-btn" @click="$router.push('/')">
+        <el-icon><House /></el-icon>
         返回预订
-      &lt;/el-button&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+      </el-button>
+    </div>
+  </div>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Calendar, Clock, Document, House } from '@element-plus/icons-vue'
@@ -59,7 +58,7 @@ import api from '../api'
 const loading = ref(false)
 const bookings = ref([])
 
-onMounted(() =&gt; {
+onMounted(() => {
   fetchBookings()
 })
 
@@ -98,9 +97,9 @@ async function cancelBooking(booking) {
     ElMessage.error(error.response?.data?.error || '取消失败')
   }
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .my-bookings {
   min-height: 100vh;
   padding-bottom: 80px;
@@ -202,5 +201,4 @@ async function cancelBooking(booking) {
 .back-home-btn:hover {
   background-color: var(--primary-light) !important;
 }
-&lt;/style&gt;
-
+</style>

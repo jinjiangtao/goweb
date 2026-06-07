@@ -1,88 +1,87 @@
+<template>
+  <div class="users">
+    <div class="header">
+      <h2>用户管理</h2>
+      <el-button type="primary" @click="openCreateDialog">添加用户</el-button>
+    </div>
 
-&lt;template&gt;
-  &lt;div class="users"&gt;
-    &lt;div class="header"&gt;
-      &lt;h2&gt;用户管理&lt;/h2&gt;
-      &lt;el-button type="primary" @click="openCreateDialog"&gt;添加用户&lt;/el-button&gt;
-    &lt;/div&gt;
-
-    &lt;div class="search-bar"&gt;
-      &lt;el-input
+    <div class="search-bar">
+      <el-input
         v-model="searchKeyword"
         placeholder="搜索用户名、姓名或手机号"
         clearable
         style="width: 300px"
         @keyup.enter="fetchUsers"
-      &gt;
-        &lt;template #append&gt;
-          &lt;el-button @click="fetchUsers"&gt;搜索&lt;/el-button&gt;
-        &lt;/template&gt;
-      &lt;/el-input&gt;
-    &lt;/div&gt;
+      >
+        <template #append>
+          <el-button @click="fetchUsers">搜索</el-button>
+        </template>
+      </el-input>
+    </div>
 
-    &lt;el-table :data="users" style="width: 100%" v-loading="loading"&gt;
-      &lt;el-table-column prop="id" label="ID" width="80" /&gt;
-      &lt;el-table-column prop="username" label="用户名" width="120" /&gt;
-      &lt;el-table-column prop="real_name" label="真实姓名" width="120" /&gt;
-      &lt;el-table-column prop="phone" label="手机号" width="130" /&gt;
-      &lt;el-table-column label="状态" width="100"&gt;
-        &lt;template #default="{ row }"&gt;
-          &lt;el-tag :type="row.status === 1 ? 'success' : 'danger'"&gt;
+    <el-table :data="users" style="width: 100%" v-loading="loading">
+      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column prop="username" label="用户名" width="120" />
+      <el-table-column prop="real_name" label="真实姓名" width="120" />
+      <el-table-column prop="phone" label="手机号" width="130" />
+      <el-table-column label="状态" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 1 ? 'success' : 'danger'">
             {{ row.status === 1 ? '启用' : '禁用' }}
-          &lt;/el-tag&gt;
-        &lt;/template&gt;
-      &lt;/el-table-column&gt;
-      &lt;el-table-column prop="created_at" label="创建时间" width="180" /&gt;
-      &lt;el-table-column label="操作" fixed="right" width="280"&gt;
-        &lt;template #default="{ row }"&gt;
-          &lt;el-button type="primary" size="small" @click="openEditDialog(row)"&gt;编辑&lt;/el-button&gt;
-          &lt;el-button type="warning" size="small" @click="toggleStatus(row)"&gt;
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="created_at" label="创建时间" width="180" />
+      <el-table-column label="操作" fixed="right" width="280">
+        <template #default="{ row }">
+          <el-button type="primary" size="small" @click="openEditDialog(row)">编辑</el-button>
+          <el-button type="warning" size="small" @click="toggleStatus(row)">
             {{ row.status === 1 ? '禁用' : '启用' }}
-          &lt;/el-button&gt;
-          &lt;el-button type="info" size="small" @click="resetPassword(row)"&gt;重置密码&lt;/el-button&gt;
-          &lt;el-button type="danger" size="small" @click="handleDelete(row)"&gt;删除&lt;/el-button&gt;
-        &lt;/template&gt;
-      &lt;/el-table-column&gt;
-    &lt;/el-table&gt;
+          </el-button>
+          <el-button type="info" size="small" @click="resetPassword(row)">重置密码</el-button>
+          <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-    &lt;div class="pagination"&gt;
-      &lt;el-pagination
+    <div class="pagination">
+      <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
         :total="total"
         layout="total, prev, pager, next"
         @current-change="fetchUsers"
-      /&gt;
-    &lt;/div&gt;
+      />
+    </div>
 
-    &lt;el-dialog
+    <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑用户' : '添加用户'"
       width="450px"
-    &gt;
-      &lt;el-form :model="form" :rules="rules" ref="formRef" label-width="100px"&gt;
-        &lt;el-form-item label="用户名" prop="username"&gt;
-          &lt;el-input v-model="form.username" :disabled="isEdit" /&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item label="密码" prop="password" v-if="!isEdit"&gt;
-          &lt;el-input v-model="form.password" type="password" /&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item label="真实姓名" prop="real_name"&gt;
-          &lt;el-input v-model="form.real_name" /&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item label="手机号" prop="phone"&gt;
-          &lt;el-input v-model="form.phone" maxlength="11" /&gt;
-        &lt;/el-form-item&gt;
-      &lt;/el-form&gt;
-      &lt;template #footer&gt;
-        &lt;el-button @click="dialogVisible = false"&gt;取消&lt;/el-button&gt;
-        &lt;el-button type="primary" :loading="submitting" @click="handleSubmit"&gt;确定&lt;/el-button&gt;
-      &lt;/template&gt;
-    &lt;/el-dialog&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+    >
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" :disabled="isEdit" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password" v-if="!isEdit">
+          <el-input v-model="form.password" type="password" />
+        </el-form-item>
+        <el-form-item label="真实姓名" prop="real_name">
+          <el-input v-model="form.real_name" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="form.phone" maxlength="11" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
@@ -114,7 +113,7 @@ const rules = {
   phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { pattern: /^\d{11}$/, message: '请输入11位手机号', trigger: 'blur' }]
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   fetchUsers()
 })
 
@@ -254,9 +253,9 @@ async function handleDelete(row) {
     ElMessage.error(error.response?.data?.error || '删除失败')
   }
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .users {
   background: #1e293b;
   border-radius: 8px;
@@ -303,5 +302,4 @@ async function handleDelete(row) {
   display: flex;
   justify-content: flex-end;
 }
-&lt;/style&gt;
-
+</style>

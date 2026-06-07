@@ -1,85 +1,84 @@
-
-&lt;template&gt;
-  &lt;div class="login-container"&gt;
-    &lt;div class="login-card"&gt;
-      &lt;h1&gt;会议室预订系统&lt;/h1&gt;
-      &lt;div class="tabs"&gt;
-        &lt;button 
+<template>
+  <div class="login-container">
+    <div class="login-card">
+      <h1>会议室预订系统</h1>
+      <div class="tabs">
+        <button 
           :class="['tab', { active: !isRegister }]" 
           @click="isRegister = false"
-        &gt;
+        >
           登录
-        &lt;/button&gt;
-        &lt;button 
+        </button>
+        <button 
           :class="['tab', { active: isRegister }]" 
           @click="isRegister = true"
-        &gt;
+        >
           注册
-        &lt;/button&gt;
-      &lt;/div&gt;
-      &lt;form @submit.prevent="handleSubmit"&gt;
-        &lt;div class="form-group"&gt;
-          &lt;label&gt;用户名&lt;/label&gt;
-          &lt;input 
+        </button>
+      </div>
+      <form @submit.prevent="handleSubmit">
+        <div class="form-group">
+          <label>用户名</label>
+          <input 
             v-model="form.username" 
             type="text" 
             placeholder="请输入用户名" 
             required
-          /&gt;
-        &lt;/div&gt;
-        &lt;div class="form-group"&gt;
-          &lt;label&gt;密码&lt;/label&gt;
-          &lt;input 
+          />
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input 
             v-model="form.password" 
             type="password" 
             placeholder="请输入密码" 
             required
-          /&gt;
-        &lt;/div&gt;
-        &lt;div v-if="isRegister" class="form-group"&gt;
-          &lt;label&gt;确认密码&lt;/label&gt;
-          &lt;input 
+          />
+        </div>
+        <div v-if="isRegister" class="form-group">
+          <label>确认密码</label>
+          <input 
             v-model="form.confirmPassword" 
             type="password" 
             placeholder="请再次输入密码" 
             required
-          /&gt;
-        &lt;/div&gt;
-        &lt;div v-if="isRegister" class="form-group"&gt;
-          &lt;label&gt;真实姓名&lt;/label&gt;
-          &lt;input 
+          />
+        </div>
+        <div v-if="isRegister" class="form-group">
+          <label>真实姓名</label>
+          <input 
             v-model="form.realName" 
             type="text" 
             placeholder="请输入真实姓名" 
             required
-          /&gt;
-        &lt;/div&gt;
-        &lt;div v-if="isRegister" class="form-group"&gt;
-          &lt;label&gt;手机号&lt;/label&gt;
-          &lt;input 
+          />
+        </div>
+        <div v-if="isRegister" class="form-group">
+          <label>手机号</label>
+          <input 
             v-model="form.phone" 
             type="tel" 
             placeholder="请输入手机号" 
             maxlength="11"
             required
-          /&gt;
-        &lt;/div&gt;
-        &lt;button type="submit" class="submit-btn" :disabled="loading"&gt;
+          />
+        </div>
+        <button type="submit" class="submit-btn" :disabled="loading">
           {{ loading ? '请稍候...' : (isRegister ? '注册' : '登录') }}
-        &lt;/button&gt;
-        &lt;p v-if="error" class="error"&gt;{{ error }}&lt;/p&gt;
-      &lt;/form&gt;
-      &lt;p v-if="!isRegister" class="hint"&gt;
-        没有账号？&lt;a @click="isRegister = true"&gt;立即注册&lt;/a&gt;
-      &lt;/p&gt;
-      &lt;p v-if="isRegister" class="hint"&gt;
-        已有账号？&lt;a @click="isRegister = false"&gt;立即登录&lt;/a&gt;
-      &lt;/p&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+        </button>
+        <p v-if="error" class="error">{{ error }}</p>
+      </form>
+      <p v-if="!isRegister" class="hint">
+        没有账号？<a @click="isRegister = true">立即注册</a>
+      </p>
+      <p v-if="isRegister" class="hint">
+        已有账号？<a @click="isRegister = false">立即登录</a>
+      </p>
+    </div>
+  </div>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api, { setAuthToken } from '../api'
@@ -97,7 +96,7 @@ const form = ref({
   phone: ''
 })
 
-const handleSubmit = async () =&gt; {
+const handleSubmit = async () => {
   error.value = ''
   loading.value = true
   
@@ -107,7 +106,7 @@ const handleSubmit = async () =&gt; {
         error.value = '两次密码输入不一致'
         return
       }
-      if (form.value.password.length &lt; 6) {
+      if (form.value.password.length < 6) {
         error.value = '密码长度至少6位'
         return
       }
@@ -132,8 +131,8 @@ const handleSubmit = async () =&gt; {
       })
       
       localStorage.setItem('token', res.data.token)
-          localStorage.setItem('user', JSON.stringify(res.data.user))
-          setAuthToken(res.data.token)
+      localStorage.setItem('user', JSON.stringify(res.data.user))
+      setAuthToken(res.data.token)
       
       router.push('/')
     }
@@ -143,9 +142,9 @@ const handleSubmit = async () =&gt; {
     loading.value = false
   }
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -259,5 +258,4 @@ const handleSubmit = async () =&gt; {
   cursor: pointer;
   text-decoration: underline;
 }
-&lt;/style&gt;
-
+</style>

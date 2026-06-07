@@ -1,118 +1,117 @@
-
-&lt;template&gt;
-  &lt;div class="home"&gt;
-    &lt;div class="banner"&gt;
-      &lt;div class="banner-top"&gt;
-        &lt;h1&gt;会议室预订&lt;/h1&gt;
-        &lt;el-button text class="logout-btn" @click="handleLogout"&gt;
-          &lt;el-icon&gt;&lt;SwitchButton /&gt;&lt;/el-icon&gt;
+<template>
+  <div class="home">
+    <div class="banner">
+      <div class="banner-top">
+        <h1>会议室预订</h1>
+        <el-button text class="logout-btn" @click="handleLogout">
+          <el-icon><SwitchButton /></el-icon>
           退出
-        &lt;/el-button&gt;
-      &lt;/div&gt;
-      &lt;p&gt;高效协作，从订会议室开始&lt;/p&gt;
-      &lt;p class="user-info"&gt;欢迎你，{{ user?.real_name }}&lt;/p&gt;
-    &lt;/div&gt;
+        </el-button>
+      </div>
+      <p>高效协作，从订会议室开始</p>
+      <p class="user-info">欢迎你，{{ user?.real_name }}</p>
+    </div>
 
-    &lt;div class="content"&gt;
-      &lt;div class="section-title"&gt;
-        &lt;el-icon&gt;&lt;OfficeBuilding /&gt;&lt;/el-icon&gt;
-        &lt;span&gt;选择会议室&lt;/span&gt;
-      &lt;/div&gt;
+    <div class="content">
+      <div class="section-title">
+        <el-icon><OfficeBuilding /></el-icon>
+        <span>选择会议室</span>
+      </div>
 
-      &lt;div class="room-list" v-loading="loading"&gt;
-        &lt;div class="room-card" v-for="room in rooms" :key="room.id"&gt;
-          &lt;div class="room-header"&gt;
-            &lt;h3&gt;{{ room.name }}&lt;/h3&gt;
-            &lt;div class="capacity"&gt;
-              &lt;el-icon&gt;&lt;User /&gt;&lt;/el-icon&gt;
-              &lt;span&gt;可容纳 {{ room.capacity }} 人&lt;/span&gt;
-            &lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div class="devices"&gt;
-            &lt;div class="device-item" v-for="device in parseDevices(room.devices)" :key="device"&gt;
-              &lt;el-icon :size="16"&gt;
-                &lt;component :is="getDeviceIcon(device)" /&gt;
-              &lt;/el-icon&gt;
-              &lt;span&gt;{{ device }}&lt;/span&gt;
-            &lt;/div&gt;
-          &lt;/div&gt;
-          &lt;el-button type="primary" class="book-btn" @click="openBookingDrawer(room)"&gt;立即预订&lt;/el-button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+      <div class="room-list" v-loading="loading">
+        <div class="room-card" v-for="room in rooms" :key="room.id">
+          <div class="room-header">
+            <h3>{{ room.name }}</h3>
+            <div class="capacity">
+              <el-icon><User /></el-icon>
+              <span>可容纳 {{ room.capacity }} 人</span>
+            </div>
+          </div>
+          <div class="devices">
+            <div class="device-item" v-for="device in parseDevices(room.devices)" :key="device">
+              <el-icon :size="16">
+                <component :is="getDeviceIcon(device)" />
+              </el-icon>
+              <span>{{ device }}</span>
+            </div>
+          </div>
+          <el-button type="primary" class="book-btn" @click="openBookingDrawer(room)">立即预订</el-button>
+        </div>
+      </div>
+    </div>
 
-    &lt;div class="footer-btn"&gt;
-      &lt;el-button type="primary" class="my-bookings-btn" @click="$router.push('/my-bookings')"&gt;
-        &lt;el-icon&gt;&lt;Document /&gt;&lt;/el-icon&gt;
+    <div class="footer-btn">
+      <el-button type="primary" class="my-bookings-btn" @click="$router.push('/my-bookings')">
+        <el-icon><Document /></el-icon>
         我的预订
-      &lt;/el-button&gt;
-    &lt;/div&gt;
+      </el-button>
+    </div>
 
-    &lt;el-drawer
+    <el-drawer
       v-model="drawerVisible"
       title="预订会议室"
       direction="btt"
       size="80%"
-    &gt;
-      &lt;div class="booking-form"&gt;
-        &lt;el-form :model="form" ref="formRef" :rules="rules" label-width="80px"&gt;
-          &lt;el-alert
+    >
+      <div class="booking-form">
+        <el-form :model="form" ref="formRef" :rules="rules" label-width="80px">
+          <el-alert
             :title="'预订会议室：' + selectedRoom?.name"
             type="info"
             :closable="false"
             show-icon
             style="margin-bottom: 20px;"
-          /&gt;
-          &lt;el-form-item label="日期" prop="date"&gt;
-            &lt;el-date-picker
+          />
+          <el-form-item label="日期" prop="date">
+            <el-date-picker
               v-model="form.date"
               type="date"
               placeholder="选择日期"
               :disabled-date="disabledDate"
               value-format="YYYY-MM-DD"
               style="width: 100%;"
-            /&gt;
-          &lt;/el-form-item&gt;
-          &lt;el-form-item label="开始时间" prop="startTime"&gt;
-            &lt;el-select v-model="form.startTime" placeholder="选择开始时间" style="width: 100%;"&gt;
-              &lt;el-option
+            />
+          </el-form-item>
+          <el-form-item label="开始时间" prop="startTime">
+            <el-select v-model="form.startTime" placeholder="选择开始时间" style="width: 100%;">
+              <el-option
                 v-for="time in timeOptions"
                 :key="time"
                 :label="time"
                 :value="time"
-              /&gt;
-            &lt;/el-select&gt;
-          &lt;/el-form-item&gt;
-          &lt;el-form-item label="结束时间" prop="endTime"&gt;
-            &lt;el-select v-model="form.endTime" placeholder="选择结束时间" style="width: 100%;"&gt;
-              &lt;el-option
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="结束时间" prop="endTime">
+            <el-select v-model="form.endTime" placeholder="选择结束时间" style="width: 100%;">
+              <el-option
                 v-for="time in filteredEndTimes"
                 :key="time"
                 :label="time"
                 :value="time"
-              /&gt;
-            &lt;/el-select&gt;
-          &lt;/el-form-item&gt;
-          &lt;el-form-item label="用途" prop="purpose"&gt;
-            &lt;el-input
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="用途" prop="purpose">
+            <el-input
               v-model="form.purpose"
               type="textarea"
               :rows="3"
               placeholder="请输入预订用途（选填）"
-            /&gt;
-          &lt;/el-form-item&gt;
-        &lt;/el-form&gt;
+            />
+          </el-form-item>
+        </el-form>
 
-        &lt;div class="form-buttons"&gt;
-          &lt;el-button @click="drawerVisible = false"&gt;取消&lt;/el-button&gt;
-          &lt;el-button type="primary" :loading="submitting" @click="submitBooking"&gt;提交预订&lt;/el-button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/el-drawer&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+        <div class="form-buttons">
+          <el-button @click="drawerVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitBooking">提交预订</el-button>
+        </div>
+      </div>
+    </el-drawer>
+  </div>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -143,7 +142,7 @@ const rules = {
 
 const timeOptions = ref([])
 
-onMounted(() =&gt; {
+onMounted(() => {
   generateTimeOptions()
   fetchRooms()
   getUserInfo()
@@ -158,23 +157,23 @@ function getUserInfo() {
 
 function generateTimeOptions() {
   const options = []
-  for (let hour = 9; hour &lt;= 18; hour++) {
+  for (let hour = 9; hour <= 18; hour++) {
     options.push(`${hour.toString().padStart(2, '0')}:00`)
-    if (hour &lt; 18) {
+    if (hour < 18) {
       options.push(`${hour.toString().padStart(2, '0')}:30`)
     }
   }
   timeOptions.value = options
 }
 
-const filteredEndTimes = computed(() =&gt; {
+const filteredEndTimes = computed(() => {
   if (!form.startTime) return timeOptions.value
   const startIndex = timeOptions.value.indexOf(form.startTime)
   return timeOptions.value.slice(startIndex + 1)
 })
 
 function disabledDate(time) {
-  return time.getTime() &lt; Date.now() - 8.64e7
+  return time.getTime() < Date.now() - 8.64e7
 }
 
 function parseDevices(devicesStr) {
@@ -182,7 +181,7 @@ function parseDevices(devicesStr) {
   try {
     const parsed = JSON.parse(devicesStr)
     if (Array.isArray(parsed)) {
-      return parsed.map(d =&gt; {
+      return parsed.map(d => {
         if (typeof d === 'string') return d
         if (d.name) return d.name
         if (d.label) return d.label
@@ -191,7 +190,7 @@ function parseDevices(devicesStr) {
     }
     return []
   } catch {
-    return devicesStr.split(',').map(d =&gt; d.trim()).filter(d =&gt; d)
+    return devicesStr.split(',').map(d => d.trim()).filter(d => d)
   }
 }
 
@@ -256,9 +255,9 @@ async function submitBooking() {
         cancelButtonText: '留在首页',
         type: 'success'
       }
-    ).then(() =&gt; {
+    ).then(() => {
       router.push('/my-bookings')
-    }).catch(() =&gt; {})
+    }).catch(() => {})
   } catch (error) {
     ElMessage.error(error.response?.data?.error || '预订失败')
   } finally {
@@ -275,16 +274,16 @@ function handleLogout() {
       cancelButtonText: '取消',
       type: 'warning'
     }
-  ).then(() =&gt; {
+  ).then(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setAuthToken(null)
     router.push('/login')
-  }).catch(() =&gt; {})
+  }).catch(() => {})
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .home {
   min-height: 100vh;
   padding-bottom: 80px;
@@ -433,5 +432,4 @@ function handleLogout() {
   flex: 1;
   border-radius: 6px;
 }
-&lt;/style&gt;
-
+</style>
