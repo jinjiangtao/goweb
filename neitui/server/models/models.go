@@ -88,6 +88,27 @@ func InitDB() error {
 	return nil
 }
 
+func columnExists(tableName, columnName string) bool {
+	rows, err := DB.Query("PRAGMA table_info(" + tableName + ")")
+	if err != nil {
+		return false
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid int
+		var name, typeCol string
+		var notNull, dfltValue, pk sql.NullString
+		if err := rows.Scan(&cid, &name, &typeCol, &notNull, &dfltValue, &pk); err != nil {
+			continue
+		}
+		if name == columnName {
+			return true
+		}
+	}
+	return false
+}
+
 func createTables() error {
 	tables := []string{
 		`CREATE TABLE IF NOT EXISTS users (
@@ -147,18 +168,24 @@ func createTables() error {
 		}
 	}
 
-	// 迁移现有表，添加新字段
-	alterStatements := []string{
-		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS favorite_count INTEGER NOT NULL DEFAULT 0`,
-		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_pros TEXT`,
-		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_cons TEXT`,
-		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_score INTEGER`,
-		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_time DATETIME`,
+	// 迁移现有表，添加新字段（SQLite 不支持 IF NOT EXISTS，所以我们手动检查）
+	// 检查并添加 jobs 表的 favorite_count 列
+	if !columnExists("jobs", "favorite_count") {
+		_, _ = DB.Exec(`ALTER TABLE jobs ADD COLUMN favorite_count INTEGER NOT NULL DEFAULT 0`)
 	}
 
-	for _, stmt := range alterStatements {
-		_, _ = DB.Exec(stmt)
-		// 忽略错误，因为字段可能已存在
+	// 检查并添加 referrals 表的评价相关列
+	if !columnExists("referrals", "evaluation_pros") {
+		_, _ = DB.Exec(`ALTER TABLE referrals ADD COLUMN evaluation_pros TEXT`)
+	}
+	if !columnExists("referrals", "evaluation_cons") {
+		_, _ = DB.Exec(`ALTER TABLE referrals ADD COLUMN evaluation_cons TEXT`)
+	}
+	if !columnExists("referrals", "evaluation_score") {
+		_, _ = DB.Exec(`ALTER TABLE referrals ADD COLUMN evaluation_score INTEGER`)
+	}
+	if !columnExists("referrals", "evaluation_time") {
+		_, _ = DB.Exec(`ALTER TABLE referrals ADD COLUMN evaluation_time DATETIME`)
 	}
 
 	return nil
