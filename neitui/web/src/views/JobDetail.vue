@@ -3,7 +3,7 @@
     <van-nav-bar title="职位详情" left-arrow @click-left="router.back()" />
     
     <div v-if="loading" class="loading">
-      <van-loading />
+      <van-loading size="24px">加载中...</van-loading>
     </div>
     
     <div v-else-if="job" class="content">
@@ -19,10 +19,17 @@
         <h3>职位要求</h3>
         <p>{{ job.requirement }}</p>
       </div>
+      
+      <div class="apply-section">
+        <van-button type="primary" size="large" block @click="showApplyDialog = true">
+          <van-icon name="envelop-o" />
+          我要投递
+        </van-button>
+      </div>
     </div>
-
-    <div class="footer">
-      <van-button type="primary" block @click="showApplyDialog = true">立即投递</van-button>
+    
+    <div v-else class="empty">
+      <van-empty description="职位信息加载失败" />
     </div>
 
     <van-dialog
@@ -79,6 +86,7 @@ const fetchJobDetail = async () => {
     const res = await api.get(`/public/jobs/${route.params.id}`)
     job.value = res
   } catch (error) {
+    console.error('获取职位详情失败:', error)
     showToast('获取职位详情失败')
   } finally {
     loading.value = false
@@ -126,6 +134,7 @@ const submitApplication = async () => {
     showApplyDialog.value = false
     form.value = { name: '', phone: '', resumeFile: null }
   } catch (error) {
+    console.error('投递失败:', error)
     if (error.response?.data?.error) {
       showToast(error.response.data.error)
     } else {
@@ -143,7 +152,7 @@ onMounted(() => {
 .job-detail {
   min-height: 100vh;
   background-color: #f5f5f5;
-  padding-bottom: 70px;
+  padding-bottom: 20px;
 }
 
 .loading {
@@ -190,6 +199,7 @@ onMounted(() => {
   background-color: white;
   padding: 20px;
   border-radius: 8px;
+  margin-bottom: 15px;
 }
 
 .job-section h3 {
@@ -203,17 +213,18 @@ onMounted(() => {
   line-height: 1.6;
 }
 
-.footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 10px 15px;
+.apply-section {
   background-color: white;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
 }
 
 .apply-form {
   padding-top: 10px;
+}
+
+.empty {
+  padding: 50px 0;
 }
 </style>
