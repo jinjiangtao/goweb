@@ -22,14 +22,14 @@ type User struct {
 }
 
 type Job struct {
-	ID           int       `json:"id"`
-	Title        string    `json:"title"`
-	Requirement  string    `json:"requirement"`
-	SalaryRange  string    `json:"salary_range"`
-	Location     string    `json:"location"`
-	Status       string    `json:"status"`
-	CreatedBy    int       `json:"created_by"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID          int       `json:"id"`
+	Title       string    `json:"title"`
+	Requirement string    `json:"requirement"`
+	SalaryRange string    `json:"salary_range"`
+	Location    string    `json:"location"`
+	Status      string    `json:"status"`
+	CreatedBy   int       `json:"created_by"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type Referral struct {
@@ -46,6 +46,19 @@ type Referral struct {
 	HRRemark       string    `json:"hr_remark,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type Submission struct {
+	ID          int        `json:"id"`
+	JobID       int        `json:"job_id"`
+	JobTitle    string     `json:"job_title,omitempty"`
+	Name        string     `json:"name"`
+	Phone       string     `json:"phone"`
+	ResumePath  string     `json:"resume_path"`
+	Status      string     `json:"status"`
+	Converted   bool       `json:"converted"`
+	ConvertedAt *time.Time `json:"converted_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 func InitDB() error {
@@ -103,6 +116,17 @@ func createTables() error {
 			hr_remark TEXT,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS submissions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			job_id INTEGER NOT NULL,
+			name TEXT NOT NULL,
+			phone TEXT NOT NULL,
+			resume_path TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'screening',
+			converted BOOLEAN NOT NULL DEFAULT 0,
+			converted_at DATETIME,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
 	}
 

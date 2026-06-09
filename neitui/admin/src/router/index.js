@@ -43,6 +43,12 @@ const routes = [
         meta: { role: 'hr' }
       },
       {
+        path: 'admin/submissions',
+        name: 'AdminSubmissions',
+        component: () => import('@/views/hr/Submissions.vue'),
+        meta: { role: 'hr' }
+      },
+      {
         path: 'admin/users',
         name: 'Users',
         component: () => import('@/views/admin/Users.vue'),

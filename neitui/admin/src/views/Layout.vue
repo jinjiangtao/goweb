@@ -27,6 +27,10 @@
             <el-icon><Document /></el-icon>
             <span>内推列表</span>
           </el-menu-item>
+          <el-menu-item index="/admin/submissions">
+            <el-icon><Document /></el-icon>
+            <span>投递管理</span>
+          </el-menu-item>
           <el-menu-item index="/admin/jobs">
             <el-icon><Briefcase /></el-icon>
             <span>职位列表</span>

@@ -4,6 +4,7 @@ import (
 	"neitui/models"
 	"neitui/utils"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -528,4 +529,319 @@ func ResetPassword(c *gin.Context) {
 
 func ExportReferrals(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Export feature coming soon"})
+}
+
+func GetPublicJobs(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	search := c.Query("search")
+	salaryRange := c.Query("salary_range")
+	location := c.Query("location")
+
+	offset := (page - 1) * pageSize
+
+	query := `
+		SELECT id, title, requirement, salary_range, location, status, created_at 
+		FROM jobs 
+		WHERE status = 'active'
+	`
+	args := []interface{}{}
+
+	if search != "" {
+		query += " AND title LIKE ?"
+		args = append(args, "%"+search+"%")
+	}
+	if salaryRange != "" {
+		query += " AND salary_range = ?"
+		args = append(args, salaryRange)
+	}
+	if location != "" {
+		query += " AND location = ?"
+		args = append(args, location)
+	}
+
+	query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+	args = append(args, pageSize, offset)
+
+	rows, err := models.DB.Query(query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get jobs"})
+		return
+	}
+	defer rows.Close()
+
+	var jobs []models.Job
+	for rows.Next() {
+		var job models.Job
+		rows.Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt)
+		jobs = append(jobs, job)
+	}
+
+	countQuery := "SELECT COUNT(*) FROM jobs WHERE status = 'active'"
+	countArgs := []interface{}{}
+	if search != "" {
+		countQuery += " AND title LIKE ?"
+		countArgs = append(countArgs, "%"+search+"%")
+	}
+	if salaryRange != "" {
+		countQuery += " AND salary_range = ?"
+		countArgs = append(countArgs, salaryRange)
+	}
+	if location != "" {
+		countQuery += " AND location = ?"
+		countArgs = append(countArgs, location)
+	}
+	var total int
+	models.DB.QueryRow(countQuery, countArgs...).Scan(&total)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  jobs,
+		"total": total,
+		"page":  page,
+	})
+}
+
+func GetPublicJobDetail(c *gin.Context) {
+	id := c.Param("id")
+
+	var job models.Job
+	err := models.DB.QueryRow(
+		"SELECT id, title, requirement, salary_range, location, status, created_at FROM jobs WHERE id = ?",
+		id,
+	).Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, job)
+}
+
+func SubmitApplication(c *gin.Context) {
+	jobID, _ := strconv.Atoi(c.PostForm("job_id"))
+	name := c.PostForm("name")
+	phone := c.PostForm("phone")
+
+	if jobID == 0 || name == "" || phone == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields"})
+		return
+	}
+
+	var count int
+	models.DB.QueryRow("SELECT COUNT(*) FROM submissions WHERE job_id = ? AND phone = ?", jobID, phone).Scan(&count)
+	if count > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You have already applied for this job"})
+		return
+	}
+
+	file, err := c.FormFile("resume_file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Resume file is required"})
+		return
+	}
+
+	uploadsPath := "./uploads/resumes/h5"
+	os.MkdirAll(uploadsPath, 0755)
+
+	filename := strconv.FormatInt(time.Now().Unix(), 10) + "_" + file.Filename
+	resumePath := "/uploads/resumes/h5/" + filename
+	err = c.SaveUploadedFile(file, uploadsPath+"/"+filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save resume"})
+		return
+	}
+
+	result, err := models.DB.Exec(
+		"INSERT INTO submissions (job_id, name, phone, resume_path, status) VALUES (?, ?, ?, ?, 'screening')",
+		jobID, name, phone, resumePath,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to submit application"})
+		return
+	}
+
+	id, _ := result.LastInsertId()
+	c.JSON(http.StatusOK, gin.H{"id": id, "message": "Application submitted successfully"})
+}
+
+func GetMySubmissions(c *gin.Context) {
+	phone := c.Query("phone")
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Phone number is required"})
+		return
+	}
+
+	query := `
+		SELECT s.id, s.job_id, j.title, s.name, s.phone, s.resume_path, s.status, s.created_at 
+		FROM submissions s 
+		JOIN jobs j ON s.job_id = j.id 
+		WHERE s.phone = ?
+		ORDER BY s.created_at DESC
+	`
+
+	rows, err := models.DB.Query(query, phone)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get submissions"})
+		return
+	}
+	defer rows.Close()
+
+	type SubmissionWithJobTitle struct {
+		models.Submission
+	}
+	var submissions []SubmissionWithJobTitle
+	for rows.Next() {
+		var s SubmissionWithJobTitle
+		rows.Scan(&s.ID, &s.JobID, &s.JobTitle, &s.Name, &s.Phone, &s.ResumePath, &s.Status, &s.CreatedAt)
+		submissions = append(submissions, s)
+	}
+
+	c.JSON(http.StatusOK, submissions)
+}
+
+func GetAllSubmissions(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	status := c.Query("status")
+	jobID := c.Query("job_id")
+	search := c.Query("search")
+
+	offset := (page - 1) * pageSize
+
+	query := `
+		SELECT s.id, s.job_id, j.title, s.name, s.phone, s.resume_path, s.status, 
+		       s.converted, s.converted_at, s.created_at 
+		FROM submissions s 
+		JOIN jobs j ON s.job_id = j.id 
+		WHERE 1=1
+	`
+	args := []interface{}{}
+
+	if status != "" {
+		query += " AND s.status = ?"
+		args = append(args, status)
+	}
+	if jobID != "" {
+		query += " AND s.job_id = ?"
+		args = append(args, jobID)
+	}
+	if search != "" {
+		query += " AND (s.name LIKE ? OR s.phone LIKE ?)"
+		args = append(args, "%"+search+"%", "%"+search+"%")
+	}
+
+	query += " ORDER BY s.created_at DESC LIMIT ? OFFSET ?"
+	args = append(args, pageSize, offset)
+
+	rows, err := models.DB.Query(query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get submissions"})
+		return
+	}
+	defer rows.Close()
+
+	type SubmissionWithJobTitle struct {
+		models.Submission
+	}
+	var submissions []SubmissionWithJobTitle
+	for rows.Next() {
+		var s SubmissionWithJobTitle
+		rows.Scan(&s.ID, &s.JobID, &s.JobTitle, &s.Name, &s.Phone, &s.ResumePath, &s.Status,
+			&s.Converted, &s.ConvertedAt, &s.CreatedAt)
+		submissions = append(submissions, s)
+	}
+
+	countQuery := "SELECT COUNT(*) FROM submissions s WHERE 1=1"
+	countArgs := []interface{}{}
+	if status != "" {
+		countQuery += " AND s.status = ?"
+		countArgs = append(countArgs, status)
+	}
+	if jobID != "" {
+		countQuery += " AND s.job_id = ?"
+		countArgs = append(countArgs, jobID)
+	}
+	if search != "" {
+		countQuery += " AND (s.name LIKE ? OR s.phone LIKE ?)"
+		countArgs = append(countArgs, "%"+search+"%", "%"+search+"%")
+	}
+	var total int
+	models.DB.QueryRow(countQuery, countArgs...).Scan(&total)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  submissions,
+		"total": total,
+		"page":  page,
+	})
+}
+
+func UpdateSubmissionStatus(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Status string `json:"status" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err := models.DB.Exec(
+		"UPDATE submissions SET status = ? WHERE id = ?",
+		req.Status, id,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update submission"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully"})
+}
+
+func ConvertSubmissionToReferral(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		EmployeeID int `json:"employee_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var submission struct {
+		JobID      int
+		Name       string
+		Phone      string
+		ResumePath string
+	}
+	err := models.DB.QueryRow(
+		"SELECT job_id, name, phone, resume_path FROM submissions WHERE id = ?",
+		id,
+	).Scan(&submission.JobID, &submission.Name, &submission.Phone, &submission.ResumePath)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Submission not found"})
+		return
+	}
+
+	result, err := models.DB.Exec(
+		`INSERT INTO referrals (job_id, candidate_name, candidate_phone, resume_path, employee_id, status) 
+		VALUES (?, ?, ?, ?, ?, 'screening')`,
+		submission.JobID, submission.Name, submission.Phone, submission.ResumePath, req.EmployeeID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create referral"})
+		return
+	}
+
+	_, err = models.DB.Exec(
+		"UPDATE submissions SET converted = 1, converted_at = CURRENT_TIMESTAMP WHERE id = ?",
+		id,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update submission"})
+		return
+	}
+
+	referralID, _ := result.LastInsertId()
+	c.JSON(http.StatusOK, gin.H{"referral_id": referralID, "message": "Converted successfully"})
 }

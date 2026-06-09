@@ -12,6 +12,14 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		api.POST("/user/login", handlers.Login)
 
+		public := api.Group("/public")
+		{
+			public.GET("/jobs", handlers.GetPublicJobs)
+			public.GET("/jobs/:id", handlers.GetPublicJobDetail)
+			public.POST("/submit", handlers.SubmitApplication)
+			public.GET("/submissions", handlers.GetMySubmissions)
+		}
+
 		auth := api.Group("")
 		auth.Use(middleware.AuthMiddleware())
 		{
@@ -31,6 +39,10 @@ func SetupRoutes(r *gin.Engine) {
 				hr.GET("/admin/stats", handlers.GetStats)
 				hr.GET("/admin/jobs", handlers.GetAllJobs)
 				hr.GET("/admin/referrals/export", handlers.ExportReferrals)
+
+				hr.GET("/admin/submissions", handlers.GetAllSubmissions)
+				hr.PUT("/admin/submissions/:id/status", handlers.UpdateSubmissionStatus)
+				hr.POST("/admin/submissions/:id/convert", handlers.ConvertSubmissionToReferral)
 			}
 
 			admin := auth.Group("")
