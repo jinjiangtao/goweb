@@ -1,0 +1,23 @@
+# Go
+server/neitui.db
+server/uploads/resumes/*
+!server/uploads/resumes/.gitkeep
+server/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Node
+node_modules
+admin/node_modules
+admin/dist
+.DS_Store
+*.log
+
+# IDE
+.vscode
+.idea
