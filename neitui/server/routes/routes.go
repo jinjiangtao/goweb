@@ -18,6 +18,8 @@ func SetupRoutes(r *gin.Engine) {
 			public.GET("/jobs/:id", handlers.GetPublicJobDetail)
 			public.POST("/submit", handlers.SubmitApplication)
 			public.GET("/submissions", handlers.GetMySubmissions)
+			public.PUT("/jobs/:id/favorite", handlers.UpdateFavorite)
+			public.POST("/jobs/favorites", handlers.GetFavoritesByIDs)
 		}
 
 		auth := api.Group("")
@@ -30,12 +32,14 @@ func SetupRoutes(r *gin.Engine) {
 			auth.POST("/referrals", handlers.CreateReferral)
 			auth.GET("/referrals/my", handlers.GetMyReferrals)
 			auth.GET("/referrals/my/stats", handlers.GetMyReferralStats)
+			auth.GET("/referrals/:id/evaluation", handlers.GetEvaluation)
 
 			hr := auth.Group("")
 			hr.Use(middleware.RoleMiddleware("hr", "admin"))
 			{
 				hr.GET("/admin/referrals", handlers.GetAllReferrals)
 				hr.PUT("/admin/referrals/:id/status", handlers.UpdateReferralStatus)
+				hr.PUT("/admin/referrals/:id/evaluation", handlers.UpdateEvaluation)
 				hr.GET("/admin/stats", handlers.GetStats)
 				hr.GET("/admin/jobs", handlers.GetAllJobs)
 				hr.GET("/admin/referrals/export", handlers.ExportReferrals)

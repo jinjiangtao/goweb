@@ -22,30 +22,35 @@ type User struct {
 }
 
 type Job struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Requirement string    `json:"requirement"`
-	SalaryRange string    `json:"salary_range"`
-	Location    string    `json:"location"`
-	Status      string    `json:"status"`
-	CreatedBy   int       `json:"created_by"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID            int       `json:"id"`
+	Title         string    `json:"title"`
+	Requirement   string    `json:"requirement"`
+	SalaryRange   string    `json:"salary_range"`
+	Location      string    `json:"location"`
+	Status        string    `json:"status"`
+	CreatedBy     int       `json:"created_by"`
+	CreatedAt     time.Time `json:"created_at"`
+	FavoriteCount int       `json:"favorite_count"`
 }
 
 type Referral struct {
-	ID             int       `json:"id"`
-	JobID          int       `json:"job_id"`
-	JobTitle       string    `json:"job_title,omitempty"`
-	CandidateName  string    `json:"candidate_name"`
-	CandidatePhone string    `json:"candidate_phone"`
-	ResumePath     string    `json:"resume_path"`
-	Status         string    `json:"status"`
-	RejectReason   string    `json:"reject_reason,omitempty"`
-	EmployeeID     int       `json:"employee_id"`
-	EmployeeName   string    `json:"employee_name,omitempty"`
-	HRRemark       string    `json:"hr_remark,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID              int        `json:"id"`
+	JobID           int        `json:"job_id"`
+	JobTitle        string     `json:"job_title,omitempty"`
+	CandidateName   string     `json:"candidate_name"`
+	CandidatePhone  string     `json:"candidate_phone"`
+	ResumePath      string     `json:"resume_path"`
+	Status          string     `json:"status"`
+	RejectReason    string     `json:"reject_reason,omitempty"`
+	EmployeeID      int        `json:"employee_id"`
+	EmployeeName    string     `json:"employee_name,omitempty"`
+	HRRemark        string     `json:"hr_remark,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	EvaluationPros  string     `json:"evaluation_pros,omitempty"`
+	EvaluationCons  string     `json:"evaluation_cons,omitempty"`
+	EvaluationScore int        `json:"evaluation_score,omitempty"`
+	EvaluationTime  *time.Time `json:"evaluation_time,omitempty"`
 }
 
 type Submission struct {
@@ -102,7 +107,8 @@ func createTables() error {
 			location TEXT,
 			status TEXT NOT NULL DEFAULT 'active',
 			created_by INTEGER NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			favorite_count INTEGER NOT NULL DEFAULT 0
 		)`,
 		`CREATE TABLE IF NOT EXISTS referrals (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -115,7 +121,11 @@ func createTables() error {
 			employee_id INTEGER NOT NULL,
 			hr_remark TEXT,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			evaluation_pros TEXT,
+			evaluation_cons TEXT,
+			evaluation_score INTEGER,
+			evaluation_time DATETIME
 		)`,
 		`CREATE TABLE IF NOT EXISTS submissions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,6 +145,20 @@ func createTables() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// 迁移现有表，添加新字段
+	alterStatements := []string{
+		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS favorite_count INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_pros TEXT`,
+		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_cons TEXT`,
+		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_score INTEGER`,
+		`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS evaluation_time DATETIME`,
+	}
+
+	for _, stmt := range alterStatements {
+		_, _ = DB.Exec(stmt)
+		// 忽略错误，因为字段可能已存在
 	}
 
 	return nil
@@ -198,7 +222,7 @@ func initDefaultUsers() error {
 		if err != nil {
 			log.Println("Failed to create test job 1:", err)
 		}
-		
+
 		_, err = DB.Exec(
 			"INSERT INTO jobs (title, requirement, salary_range, location, status, created_by) VALUES (?, ?, ?, ?, ?, ?)",
 			"后端开发工程师", "1. 熟悉Go或Java语言\n2. 熟悉数据库操作\n3. 有后端开发经验", "18k-30k", "上海", "active", 1,
@@ -206,7 +230,7 @@ func initDefaultUsers() error {
 		if err != nil {
 			log.Println("Failed to create test job 2:", err)
 		}
-		
+
 		_, err = DB.Exec(
 			"INSERT INTO jobs (title, requirement, salary_range, location, status, created_by) VALUES (?, ?, ?, ?, ?, ?)",
 			"产品经理", "1. 熟悉产品设计流程\n2. 有互联网产品经验\n3. 良好的沟通能力", "20k-35k", "深圳", "active", 1,

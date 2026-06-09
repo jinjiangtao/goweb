@@ -30,6 +30,22 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="评分" width="100">
+          <template #default="{ row }">
+            <span v-if="row.evaluation_score">
+              <el-rate v-model="row.evaluation_score" disabled show-score />
+            </span>
+            <span v-else style="color: #999">未评分</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="评价摘要" width="200">
+          <template #default="{ row }">
+            <span v-if="row.evaluation_pros" style="color: #67c23a">
+              {{ row.evaluation_pros.length > 30 ? row.evaluation_pros.substring(0, 30) + '...' : row.evaluation_pros }}
+            </span>
+            <span v-else style="color: #999">暂无评价</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="resume_path" label="简历">
           <template #default="{ row }">
             <el-link v-if="row.resume_path" type="primary" :href="row.resume_path" target="_blank">查看</el-link>
@@ -40,14 +56,10 @@
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column prop="updated_at" label="更新时间">
-          <template #default="{ row }">
-            {{ formatDate(row.updated_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100">
+        <el-table-column label="操作" width="180">
           <template #default="{ row }">
             <el-button type="primary" link @click="openUpdateDialog(row)">更新</el-button>
+            <el-button type="success" link @click="openEvaluationDialog(row)">评价</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -84,6 +96,24 @@
         <el-button type="primary" @click="handleUpdate" :loading="loading">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="evaluationDialogVisible" title="评价候选人" width="500px">
+      <el-form :model="evaluationForm" label-width="100px">
+        <el-form-item label="评分">
+          <el-rate v-model="evaluationForm.score" />
+        </el-form-item>
+        <el-form-item label="优点">
+          <el-input v-model="evaluationForm.pros" type="textarea" :rows="3" placeholder="请描述候选人的优点" />
+        </el-form-item>
+        <el-form-item label="不足">
+          <el-input v-model="evaluationForm.cons" type="textarea" :rows="3" placeholder="请描述候选人的不足" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="evaluationDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleEvaluation" :loading="loading">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -101,12 +131,19 @@ const page = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const updateDialogVisible = ref(false)
+const evaluationDialogVisible = ref(false)
 const loading = ref(false)
 const updateForm = ref({
   id: null,
   status: '',
   reject_reason: '',
   hr_remark: ''
+})
+const evaluationForm = ref({
+  id: null,
+  pros: '',
+  cons: '',
+  score: 3
 })
 
 const loadReferrals = async () => {
@@ -134,6 +171,16 @@ const openUpdateDialog = (row) => {
   updateDialogVisible.value = true
 }
 
+const openEvaluationDialog = (row) => {
+  evaluationForm.value = {
+    id: row.id,
+    pros: row.evaluation_pros || '',
+    cons: row.evaluation_cons || '',
+    score: row.evaluation_score || 3
+  }
+  evaluationDialogVisible.value = true
+}
+
 const handleUpdate = async () => {
   if (!updateForm.value.status) {
     ElMessage.warning('请选择状态')
@@ -147,6 +194,24 @@ const handleUpdate = async () => {
     loadReferrals()
   } catch (e) {
     ElMessage.error('更新失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleEvaluation = async () => {
+  if (!evaluationForm.value.score) {
+    ElMessage.warning('请选择评分')
+    return
+  }
+  loading.value = true
+  try {
+    await api.put(`/admin/referrals/${evaluationForm.value.id}/evaluation`, evaluationForm.value)
+    ElMessage.success('评价成功')
+    evaluationDialogVisible.value = false
+    loadReferrals()
+  } catch (e) {
+    ElMessage.error('评价失败')
   } finally {
     loading.value = false
   }

@@ -15,6 +15,11 @@ const routes = [
     path: '/my-submissions',
     name: 'MySubmissions',
     component: () => import('@/views/MySubmissions.vue')
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: () => import('@/views/Favorites.vue')
   }
 ]
 

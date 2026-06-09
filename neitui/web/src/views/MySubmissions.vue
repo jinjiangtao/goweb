@@ -42,6 +42,12 @@
         </div>
       </div>
     </div>
+
+    <van-tabbar v-model="activeTab" @change="onTabChange">
+      <van-tabbar-item icon="apps-o" :to="{ name: 'JobList' }">职位</van-tabbar-item>
+      <van-tabbar-item icon="star-o" :to="{ name: 'Favorites' }">收藏</van-tabbar-item>
+      <van-tabbar-item icon="notes-o" :to="{ name: 'MySubmissions' }">投递</van-tabbar-item>
+    </van-tabbar>
   </div>
 </template>
 
@@ -53,6 +59,7 @@ import api from '@/api'
 const phone = ref('')
 const loading = ref(false)
 const submissions = ref([])
+const activeTab = ref(2)
 
 const getStatusText = (status) => {
   const map = {
@@ -102,12 +109,17 @@ const fetchSubmissions = async () => {
     loading.value = false
   }
 }
+
+const onTabChange = () => {
+  // 当点击标签栏会触发路由跳转
+}
 </script>
 
 <style scoped>
 .my-submissions {
   min-height: 100vh;
   background-color: #f5f5f5;
+  padding-bottom: 50px;
 }
 
 .phone-input {

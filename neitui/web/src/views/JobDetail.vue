@@ -8,10 +8,22 @@
     
     <div v-else-if="job" class="content">
       <div class="job-header">
-        <h1>{{ job.title }}</h1>
+        <div class="header-top">
+          <h1>{{ job.title }}</h1>
+          <van-icon 
+            :name="isFavorite ? 'star' : 'star-o'" 
+            class="favorite-icon"
+            :color="isFavorite ? '#ff6034' : '#999'"
+            size="24"
+            @click.stop="toggleFavorite"
+          />
+        </div>
         <div class="job-meta">
           <span class="salary">{{ job.salaryRange || '面议' }}</span>
           <span class="location">{{ job.location || '不限' }}</span>
+          <span class="favorite-count">
+            <van-icon name="star-o" /> {{ job.favoriteCount || 0 }}
+          </span>
         </div>
       </div>
       
@@ -64,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import api from '@/api'
@@ -79,6 +91,11 @@ const form = ref({
   phone: '',
   resumeFile: []
 })
+const favoriteJobs = ref(JSON.parse(localStorage.getItem('favoriteJobs') || '[]'))
+
+const isFavorite = computed(() => {
+  return job.value && favoriteJobs.value.includes(job.value.id)
+})
 
 const fetchJobDetail = async () => {
   loading.value = true
@@ -90,6 +107,30 @@ const fetchJobDetail = async () => {
     showToast('获取职位详情失败')
   } finally {
     loading.value = false
+  }
+}
+
+const toggleFavorite = async () => {
+  if (!job.value) return
+  
+  try {
+    const action = isFavorite.value ? 'remove' : 'add'
+    const res = await api.put(`/public/jobs/${job.value.id}/favorite`, { action })
+    job.value = res
+    
+    // 更新本地收藏
+    if (action === 'add') {
+      if (!favoriteJobs.value.includes(job.value.id)) {
+        favoriteJobs.value.push(job.value.id)
+      }
+      showToast('已收藏')
+    } else {
+      favoriteJobs.value = favoriteJobs.value.filter(id => id !== job.value.id)
+      showToast('已取消收藏')
+    }
+    localStorage.setItem('favoriteJobs', JSON.stringify(favoriteJobs.value))
+  } catch (error) {
+    showToast('操作失败')
   }
 }
 
@@ -173,15 +214,28 @@ onMounted(() => {
   margin-bottom: 15px;
 }
 
-.job-header h1 {
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.header-top h1 {
+  flex: 1;
+  margin: 0;
   font-size: 20px;
   color: #333;
-  margin-bottom: 15px;
+}
+
+.favorite-icon {
+  cursor: pointer;
 }
 
 .job-meta {
   display: flex;
   gap: 15px;
+  align-items: center;
 }
 
 .salary {
@@ -193,6 +247,14 @@ onMounted(() => {
 .location {
   color: #666;
   font-size: 14px;
+}
+
+.favorite-count {
+  color: #999;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .job-section {

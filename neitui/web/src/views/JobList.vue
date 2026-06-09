@@ -21,10 +21,19 @@
           <div class="job-info">
             <span class="salary">{{ job.salaryRange || '面议' }}</span>
             <span class="location">{{ job.location || '不限' }}</span>
+            <span class="favorite-count">
+              <van-icon name="star-o" /> {{ job.favoriteCount || 0 }}
+            </span>
           </div>
         </div>
       </div>
     </div>
+
+    <van-tabbar v-model="activeTab" @change="onTabChange">
+      <van-tabbar-item icon="apps-o" :to="{ name: 'JobList' }">职位</van-tabbar-item>
+      <van-tabbar-item icon="star-o" :to="{ name: 'Favorites' }">收藏</van-tabbar-item>
+      <van-tabbar-item icon="notes-o" :to="{ name: 'MySubmissions' }">投递</van-tabbar-item>
+    </van-tabbar>
   </div>
 </template>
 
@@ -40,6 +49,7 @@ const salaryRange = ref('')
 const location = ref('')
 const loading = ref(false)
 const jobs = ref([])
+const activeTab = ref(0)
 
 const salaryOptions = [
   { text: '全部薪资', value: '' },
@@ -86,6 +96,10 @@ const goToDetail = (id) => {
   router.push(`/job/${id}`)
 }
 
+const onTabChange = () => {
+  // 当点击标签栏会触发路由跳转
+}
+
 onMounted(() => {
   fetchJobs()
 })
@@ -95,6 +109,7 @@ onMounted(() => {
 .job-list {
   min-height: 100vh;
   background-color: #f5f5f5;
+  padding-bottom: 50px;
 }
 
 .search-filter {
@@ -124,6 +139,7 @@ onMounted(() => {
 .job-info {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .salary {
@@ -134,6 +150,14 @@ onMounted(() => {
 .location {
   color: #666;
   font-size: 14px;
+}
+
+.favorite-count {
+  color: #999;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .empty {

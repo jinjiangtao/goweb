@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -177,7 +178,7 @@ func GetMyReferrals(c *gin.Context) {
 
 	query := `
 		SELECT r.id, r.job_id, j.title, r.candidate_name, r.candidate_phone, 
-		       r.resume_path, r.status, r.hr_remark, r.created_at 
+		       r.resume_path, r.status, r.hr_remark, r.created_at, r.evaluation_score
 		FROM referrals r 
 		JOIN jobs j ON r.job_id = j.id 
 		WHERE r.employee_id = ?
@@ -203,7 +204,7 @@ func GetMyReferrals(c *gin.Context) {
 	for rows.Next() {
 		var r models.Referral
 		rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
-			&r.ResumePath, &r.Status, &r.HRRemark, &r.CreatedAt)
+			&r.ResumePath, &r.Status, &r.HRRemark, &r.CreatedAt, &r.EvaluationScore)
 		referrals = append(referrals, r)
 	}
 
@@ -256,7 +257,7 @@ func GetAllReferrals(c *gin.Context) {
 	query := `
 		SELECT r.id, r.job_id, j.title, r.candidate_name, r.candidate_phone, 
 		       r.resume_path, r.status, r.employee_id, u.real_name, 
-		       r.created_at, r.updated_at 
+		       r.created_at, r.updated_at, r.evaluation_pros, r.evaluation_cons, r.evaluation_score, r.evaluation_time
 		FROM referrals r 
 		JOIN jobs j ON r.job_id = j.id 
 		JOIN users u ON r.employee_id = u.id 
@@ -295,7 +296,8 @@ func GetAllReferrals(c *gin.Context) {
 	for rows.Next() {
 		var r models.Referral
 		rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
-			&r.ResumePath, &r.Status, &r.EmployeeID, &r.EmployeeName, &r.CreatedAt, &r.UpdatedAt)
+			&r.ResumePath, &r.Status, &r.EmployeeID, &r.EmployeeName, &r.CreatedAt, &r.UpdatedAt,
+			&r.EvaluationPros, &r.EvaluationCons, &r.EvaluationScore, &r.EvaluationTime)
 		referrals = append(referrals, r)
 	}
 
@@ -367,6 +369,10 @@ func GetStats(c *gin.Context) {
 		interviewRate = float64(interviewed) / float64(totalScreened) * 100
 	}
 
+	var averageScore float64
+	var evaluatedCount int
+	models.DB.QueryRow("SELECT AVG(evaluation_score), COUNT(*) FROM referrals WHERE evaluation_score IS NOT NULL").Scan(&averageScore, &evaluatedCount)
+
 	rows, _ := models.DB.Query(`
 		SELECT u.real_name, COUNT(*) as count 
 		FROM referrals r 
@@ -385,6 +391,26 @@ func GetStats(c *gin.Context) {
 		var t TopEmployee
 		rows.Scan(&t.Name, &t.Count)
 		topEmployees = append(topEmployees, t)
+	}
+
+	rows, _ = models.DB.Query(`
+		SELECT u.real_name, AVG(r.evaluation_score) as avg_score 
+		FROM referrals r 
+		JOIN users u ON r.employee_id = u.id 
+		WHERE r.evaluation_score IS NOT NULL 
+		GROUP BY u.id, u.real_name 
+		ORDER BY avg_score DESC
+	`)
+	defer rows.Close()
+	type EmployeeScore struct {
+		Name     string  `json:"name"`
+		AvgScore float64 `json:"avg_score"`
+	}
+	var employeeScoreRanking []EmployeeScore
+	for rows.Next() {
+		var e EmployeeScore
+		rows.Scan(&e.Name, &e.AvgScore)
+		employeeScoreRanking = append(employeeScoreRanking, e)
 	}
 
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30).Format("2006-01-02")
@@ -408,11 +434,13 @@ func GetStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"total_referrals":   totalReferrals,
-		"hired":             hired,
-		"interview_rate":    interviewRate,
-		"top_employees":     topEmployees,
-		"thirty_days_trend": trends,
+		"total_referrals":        totalReferrals,
+		"hired":                  hired,
+		"interview_rate":         interviewRate,
+		"average_score":          averageScore,
+		"top_employees":          topEmployees,
+		"employee_score_ranking": employeeScoreRanking,
+		"thirty_days_trend":      trends,
 	})
 }
 
@@ -541,7 +569,7 @@ func GetPublicJobs(c *gin.Context) {
 	offset := (page - 1) * pageSize
 
 	query := `
-		SELECT id, title, requirement, salary_range, location, status, created_at 
+		SELECT id, title, requirement, salary_range, location, status, created_at, favorite_count 
 		FROM jobs 
 		WHERE status = 'active'
 	`
@@ -573,7 +601,7 @@ func GetPublicJobs(c *gin.Context) {
 	var jobs []models.Job
 	for rows.Next() {
 		var job models.Job
-		rows.Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt)
+		rows.Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt, &job.FavoriteCount)
 		jobs = append(jobs, job)
 	}
 
@@ -606,9 +634,9 @@ func GetPublicJobDetail(c *gin.Context) {
 
 	var job models.Job
 	err := models.DB.QueryRow(
-		"SELECT id, title, requirement, salary_range, location, status, created_at FROM jobs WHERE id = ?",
+		"SELECT id, title, requirement, salary_range, location, status, created_at, favorite_count FROM jobs WHERE id = ?",
 		id,
-	).Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt)
+	).Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt, &job.FavoriteCount)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
@@ -844,4 +872,119 @@ func ConvertSubmissionToReferral(c *gin.Context) {
 
 	referralID, _ := result.LastInsertId()
 	c.JSON(http.StatusOK, gin.H{"referral_id": referralID, "message": "Converted successfully"})
+}
+
+func UpdateFavorite(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Action string `json:"action" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var query string
+	if req.Action == "add" {
+		query = "UPDATE jobs SET favorite_count = favorite_count + 1 WHERE id = ?"
+	} else if req.Action == "remove" {
+		query = "UPDATE jobs SET favorite_count = favorite_count - 1 WHERE id = ? AND favorite_count > 0"
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid action"})
+		return
+	}
+
+	_, err := models.DB.Exec(query, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update favorite count"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully"})
+}
+
+func GetFavoritesByIDs(c *gin.Context) {
+	var req struct {
+		IDs []int `json:"ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		c.JSON(http.StatusOK, []models.Job{})
+		return
+	}
+
+	placeholders := make([]string, len(req.IDs))
+	args := make([]interface{}, len(req.IDs))
+	for i, id := range req.IDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	query := `
+		SELECT id, title, requirement, salary_range, location, status, created_at, favorite_count 
+		FROM jobs 
+		WHERE id IN (` + strings.Join(placeholders, ",") + `)
+		ORDER BY created_at DESC
+	`
+
+	rows, err := models.DB.Query(query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get favorite jobs"})
+		return
+	}
+	defer rows.Close()
+
+	var jobs []models.Job
+	for rows.Next() {
+		var job models.Job
+		rows.Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt, &job.FavoriteCount)
+		jobs = append(jobs, job)
+	}
+
+	c.JSON(http.StatusOK, jobs)
+}
+
+func UpdateEvaluation(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		EvaluationPros  string `json:"evaluation_pros"`
+		EvaluationCons  string `json:"evaluation_cons"`
+		EvaluationScore int    `json:"evaluation_score" binding:"min=1,max=5"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err := models.DB.Exec(
+		"UPDATE referrals SET evaluation_pros = ?, evaluation_cons = ?, evaluation_score = ?, evaluation_time = CURRENT_TIMESTAMP WHERE id = ?",
+		req.EvaluationPros, req.EvaluationCons, req.EvaluationScore, id,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update evaluation"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully"})
+}
+
+func GetEvaluation(c *gin.Context) {
+	id := c.Param("id")
+
+	var r models.Referral
+	err := models.DB.QueryRow(
+		"SELECT evaluation_pros, evaluation_cons, evaluation_score, evaluation_time FROM referrals WHERE id = ?",
+		id,
+	).Scan(&r.EvaluationPros, &r.EvaluationCons, &r.EvaluationScore, &r.EvaluationTime)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Referral not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, r)
 }

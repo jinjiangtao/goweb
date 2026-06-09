@@ -62,6 +62,14 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="评分" width="100">
+          <template #default="{ row }">
+            <span v-if="row.evaluation_score">
+              <el-rate v-model="row.evaluation_score" disabled show-score />
+            </span>
+            <span v-else style="color: #999">未评分</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="hr_remark" label="HR备注" show-overflow-tooltip />
         <el-table-column prop="resume_path" label="简历">
           <template #default="{ row }">
@@ -71,6 +79,16 @@
         <el-table-column prop="created_at" label="推荐时间">
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-button 
+              type="success" 
+              link 
+              @click="openEvaluationDialog(row)"
+              v-if="row.evaluation_score"
+            >查看评价</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -117,6 +135,26 @@
         <el-button type="primary" @click="handleCreate" :loading="loading">推荐</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="evaluationDialogVisible" title="查看评价" width="500px">
+      <el-descriptions :column="1" border v-if="currentEvaluation">
+        <el-descriptions-item label="评分">
+          <el-rate v-model="currentEvaluation.evaluation_score" disabled show-score />
+        </el-descriptions-item>
+        <el-descriptions-item label="优点">
+          {{ currentEvaluation.evaluation_pros || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="不足">
+          {{ currentEvaluation.evaluation_cons || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="评价时间">
+          {{ currentEvaluation.evaluation_time ? formatDate(currentEvaluation.evaluation_time) : '暂无' }}
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button type="primary" @click="evaluationDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -129,11 +167,13 @@ const referrals = ref([])
 const jobs = ref([])
 const stats = ref({ total: 0, status: {} })
 const dialogVisible = ref(false)
+const evaluationDialogVisible = ref(false)
 const loading = ref(false)
 const statusFilter = ref('')
 const page = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const currentEvaluation = ref(null)
 const form = ref({
   job_id: null,
   candidate_name: '',
@@ -163,6 +203,16 @@ const openDialog = () => {
   form.value = { job_id: null, candidate_name: '', candidate_phone: '' }
   selectedFile = null
   dialogVisible.value = true
+}
+
+const openEvaluationDialog = async (row) => {
+  try {
+    const res = await api.get(`/referrals/${row.id}/evaluation`)
+    currentEvaluation.value = res
+    evaluationDialogVisible.value = true
+  } catch (e) {
+    ElMessage.error('获取评价失败')
+  }
 }
 
 const handleFileChange = (file) => {
