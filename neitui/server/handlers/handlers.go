@@ -178,11 +178,31 @@ func GetMyReferrals(c *gin.Context) {
 
 	offset := (page - 1) * pageSize
 
+	// 首先获取总数
+	countQuery := "SELECT COUNT(*) FROM referrals WHERE employee_id = ?"
+	countArgs := []interface{}{userID}
+	if status != "" {
+		countQuery += " AND status = ?"
+		countArgs = append(countArgs, status)
+	}
+	var total int
+	models.DB.QueryRow(countQuery, countArgs...).Scan(&total)
+
+	// 如果总数为0，直接返回空数据
+	if total == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"data":  []models.Referral{},
+			"total": 0,
+			"page":  page,
+		})
+		return
+	}
+
 	query := `
 		SELECT r.id, r.job_id, j.title, r.candidate_name, r.candidate_phone, 
 		       r.resume_path, r.status, r.hr_remark, r.created_at, r.evaluation_score
 		FROM referrals r 
-		JOIN jobs j ON r.job_id = j.id 
+		LEFT JOIN jobs j ON r.job_id = j.id 
 		WHERE r.employee_id = ?
 	`
 	args := []interface{}{userID}
@@ -197,20 +217,34 @@ func GetMyReferrals(c *gin.Context) {
 
 	rows, err := models.DB.Query(query, args...)
 	if err != nil {
+		log.Printf("Query error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get referrals: " + err.Error()})
 		return
 	}
 	defer rows.Close()
 
-	var referrals []models.Referral
+	referrals := make([]models.Referral, 0)
 	for rows.Next() {
 		var r models.Referral
 		var evaluationScore sql.NullInt32
-		err := rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
-			&r.ResumePath, &r.Status, &r.HRRemark, &r.CreatedAt, &evaluationScore)
+		var jobTitle sql.NullString
+		var resumePath sql.NullString
+		var hrRemark sql.NullString
+		
+		err := rows.Scan(&r.ID, &r.JobID, &jobTitle, &r.CandidateName, &r.CandidatePhone,
+			&resumePath, &r.Status, &hrRemark, &r.CreatedAt, &evaluationScore)
 		if err != nil {
 			log.Printf("Scan error: %v", err)
 			continue
+		}
+		if jobTitle.Valid {
+			r.JobTitle = jobTitle.String
+		}
+		if resumePath.Valid {
+			r.ResumePath = resumePath.String
+		}
+		if hrRemark.Valid {
+			r.HRRemark = hrRemark.String
 		}
 		if evaluationScore.Valid {
 			r.EvaluationScore = int(evaluationScore.Int32)
@@ -219,18 +253,10 @@ func GetMyReferrals(c *gin.Context) {
 	}
 
 	if err = rows.Err(); err != nil {
+		log.Printf("Rows error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing rows: " + err.Error()})
 		return
 	}
-
-	countQuery := "SELECT COUNT(*) FROM referrals WHERE employee_id = ?"
-	countArgs := []interface{}{userID}
-	if status != "" {
-		countQuery += " AND status = ?"
-		countArgs = append(countArgs, status)
-	}
-	var total int
-	models.DB.QueryRow(countQuery, countArgs...).Scan(&total)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":  referrals,
@@ -274,8 +300,8 @@ func GetAllReferrals(c *gin.Context) {
 		       r.resume_path, r.status, r.employee_id, u.real_name, 
 		       r.created_at, r.updated_at, r.evaluation_pros, r.evaluation_cons, r.evaluation_score, r.evaluation_time
 		FROM referrals r 
-		JOIN jobs j ON r.job_id = j.id 
-		JOIN users u ON r.employee_id = u.id 
+		LEFT JOIN jobs j ON r.job_id = j.id 
+		LEFT JOIN users u ON r.employee_id = u.id 
 		WHERE 1=1
 	`
 	args := []interface{}{}
@@ -302,24 +328,37 @@ func GetAllReferrals(c *gin.Context) {
 
 	rows, err := models.DB.Query(query, args...)
 	if err != nil {
+		log.Printf("Query error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get referrals: " + err.Error()})
 		return
 	}
 	defer rows.Close()
 
-	var referrals []models.Referral
+	referrals := make([]models.Referral, 0)
 	for rows.Next() {
 		var r models.Referral
+		var jobTitle sql.NullString
+		var employeeName sql.NullString
+		var resumePath sql.NullString
 		var evaluationPros sql.NullString
 		var evaluationCons sql.NullString
 		var evaluationScore sql.NullInt32
 		var evaluationTime sql.NullTime
-		err := rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
-			&r.ResumePath, &r.Status, &r.EmployeeID, &r.EmployeeName, &r.CreatedAt, &r.UpdatedAt,
+		err := rows.Scan(&r.ID, &r.JobID, &jobTitle, &r.CandidateName, &r.CandidatePhone,
+			&resumePath, &r.Status, &r.EmployeeID, &employeeName, &r.CreatedAt, &r.UpdatedAt,
 			&evaluationPros, &evaluationCons, &evaluationScore, &evaluationTime)
 		if err != nil {
 			log.Printf("Scan error: %v", err)
 			continue
+		}
+		if jobTitle.Valid {
+			r.JobTitle = jobTitle.String
+		}
+		if employeeName.Valid {
+			r.EmployeeName = employeeName.String
+		}
+		if resumePath.Valid {
+			r.ResumePath = resumePath.String
 		}
 		if evaluationPros.Valid {
 			r.EvaluationPros = evaluationPros.String
