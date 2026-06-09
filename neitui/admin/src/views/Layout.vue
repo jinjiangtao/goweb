@@ -9,6 +9,7 @@
         text-color="#bfcbd9"
         active-text-color="#409EFF"
       >
+        <!-- 员工菜单 -->
         <template v-if="authStore.isEmployee()">
           <el-menu-item index="/jobs">
             <el-icon><Document /></el-icon>
@@ -19,7 +20,9 @@
             <span>我的推荐</span>
           </el-menu-item>
         </template>
-        <template v-if="authStore.isHR()">
+
+        <!-- HR 菜单（包含管理员菜单） -->
+        <template v-else-if="authStore.isHR()">
           <el-menu-item index="/admin/referrals">
             <el-icon><Document /></el-icon>
             <span>内推列表</span>
@@ -32,12 +35,14 @@
             <el-icon><DataAnalysis /></el-icon>
             <span>统计看板</span>
           </el-menu-item>
-        </template>
-        <template v-if="authStore.isAdmin()">
-          <el-menu-item index="/admin/users">
-            <el-icon><Setting /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
+
+          <!-- 仅管理员可见 -->
+          <template v-if="authStore.isAdmin()">
+            <el-menu-item index="/admin/users">
+              <el-icon><Setting /></el-icon>
+              <span>用户管理</span>
+            </el-menu-item>
+          </template>
         </template>
       </el-menu>
     </el-aside>

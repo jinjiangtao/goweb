@@ -62,7 +62,14 @@ router.beforeEach((to, from, next) => {
   
   if (to.path === '/login') {
     if (authStore.isAuthenticated()) {
-      next('/')
+      // 根据角色跳转到不同首页
+      if (authStore.isAdmin()) {
+        next('/admin/referrals')
+      } else if (authStore.isHR()) {
+        next('/admin/referrals')
+      } else {
+        next('/jobs')
+      }
     } else {
       next()
     }
@@ -75,12 +82,14 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.role === 'hr' && !authStore.isHR()) {
-    next('/')
+    // 员工角色跳转到员工首页
+    next('/jobs')
     return
   }
 
   if (to.meta.role === 'admin' && !authStore.isAdmin()) {
-    next('/')
+    // HR角色跳转到HR首页
+    next('/admin/referrals')
     return
   }
 

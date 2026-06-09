@@ -42,7 +42,15 @@ const handleLogin = async () => {
   try {
     await authStore.login(form.value.username, form.value.password)
     ElMessage.success('登录成功')
-    router.push('/')
+    
+    // 根据角色跳转到对应首页
+    if (authStore.isAdmin()) {
+      router.push('/admin/referrals')
+    } else if (authStore.isHR()) {
+      router.push('/admin/referrals')
+    } else {
+      router.push('/jobs')
+    }
   } catch (e) {
     ElMessage.error(e.response?.data?.error || '登录失败')
   } finally {
