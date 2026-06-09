@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"log"
 	"neitui/models"
 	"neitui/utils"
 	"net/http"
@@ -195,7 +197,7 @@ func GetMyReferrals(c *gin.Context) {
 
 	rows, err := models.DB.Query(query, args...)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get referrals"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get referrals: " + err.Error()})
 		return
 	}
 	defer rows.Close()
@@ -203,9 +205,22 @@ func GetMyReferrals(c *gin.Context) {
 	var referrals []models.Referral
 	for rows.Next() {
 		var r models.Referral
-		rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
-			&r.ResumePath, &r.Status, &r.HRRemark, &r.CreatedAt, &r.EvaluationScore)
+		var evaluationScore sql.NullInt32
+		err := rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
+			&r.ResumePath, &r.Status, &r.HRRemark, &r.CreatedAt, &evaluationScore)
+		if err != nil {
+			log.Printf("Scan error: %v", err)
+			continue
+		}
+		if evaluationScore.Valid {
+			r.EvaluationScore = int(evaluationScore.Int32)
+		}
 		referrals = append(referrals, r)
+	}
+
+	if err = rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing rows: " + err.Error()})
+		return
 	}
 
 	countQuery := "SELECT COUNT(*) FROM referrals WHERE employee_id = ?"
@@ -287,7 +302,7 @@ func GetAllReferrals(c *gin.Context) {
 
 	rows, err := models.DB.Query(query, args...)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get referrals"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get referrals: " + err.Error()})
 		return
 	}
 	defer rows.Close()
@@ -295,10 +310,35 @@ func GetAllReferrals(c *gin.Context) {
 	var referrals []models.Referral
 	for rows.Next() {
 		var r models.Referral
-		rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
+		var evaluationPros sql.NullString
+		var evaluationCons sql.NullString
+		var evaluationScore sql.NullInt32
+		var evaluationTime sql.NullTime
+		err := rows.Scan(&r.ID, &r.JobID, &r.JobTitle, &r.CandidateName, &r.CandidatePhone,
 			&r.ResumePath, &r.Status, &r.EmployeeID, &r.EmployeeName, &r.CreatedAt, &r.UpdatedAt,
-			&r.EvaluationPros, &r.EvaluationCons, &r.EvaluationScore, &r.EvaluationTime)
+			&evaluationPros, &evaluationCons, &evaluationScore, &evaluationTime)
+		if err != nil {
+			log.Printf("Scan error: %v", err)
+			continue
+		}
+		if evaluationPros.Valid {
+			r.EvaluationPros = evaluationPros.String
+		}
+		if evaluationCons.Valid {
+			r.EvaluationCons = evaluationCons.String
+		}
+		if evaluationScore.Valid {
+			r.EvaluationScore = int(evaluationScore.Int32)
+		}
+		if evaluationTime.Valid {
+			r.EvaluationTime = &evaluationTime.Time
+		}
 		referrals = append(referrals, r)
+	}
+
+	if err = rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing rows: " + err.Error()})
+		return
 	}
 
 	countQuery := "SELECT COUNT(*) FROM referrals r WHERE 1=1"
@@ -373,7 +413,7 @@ func GetStats(c *gin.Context) {
 	var evaluatedCount int
 	models.DB.QueryRow("SELECT AVG(evaluation_score), COUNT(*) FROM referrals WHERE evaluation_score IS NOT NULL").Scan(&averageScore, &evaluatedCount)
 
-	rows, _ := models.DB.Query(`
+	rows, err := models.DB.Query(`
 		SELECT u.real_name, COUNT(*) as count 
 		FROM referrals r 
 		JOIN users u ON r.employee_id = u.id 
@@ -381,19 +421,26 @@ func GetStats(c *gin.Context) {
 		GROUP BY u.id, u.real_name 
 		ORDER BY count DESC
 	`)
-	defer rows.Close()
 	type TopEmployee struct {
 		Name  string `json:"name"`
 		Count int    `json:"count"`
 	}
 	var topEmployees []TopEmployee
-	for rows.Next() {
-		var t TopEmployee
-		rows.Scan(&t.Name, &t.Count)
-		topEmployees = append(topEmployees, t)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var t TopEmployee
+			rows.Scan(&t.Name, &t.Count)
+			topEmployees = append(topEmployees, t)
+		}
+		if err = rows.Err(); err != nil {
+			log.Printf("Top employees rows error: %v", err)
+		}
+	} else {
+		log.Printf("Top employees query error: %v", err)
 	}
 
-	rows, _ = models.DB.Query(`
+	rows, err = models.DB.Query(`
 		SELECT u.real_name, AVG(r.evaluation_score) as avg_score 
 		FROM referrals r 
 		JOIN users u ON r.employee_id = u.id 
@@ -401,36 +448,50 @@ func GetStats(c *gin.Context) {
 		GROUP BY u.id, u.real_name 
 		ORDER BY avg_score DESC
 	`)
-	defer rows.Close()
 	type EmployeeScore struct {
 		Name     string  `json:"name"`
 		AvgScore float64 `json:"avg_score"`
 	}
 	var employeeScoreRanking []EmployeeScore
-	for rows.Next() {
-		var e EmployeeScore
-		rows.Scan(&e.Name, &e.AvgScore)
-		employeeScoreRanking = append(employeeScoreRanking, e)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var e EmployeeScore
+			rows.Scan(&e.Name, &e.AvgScore)
+			employeeScoreRanking = append(employeeScoreRanking, e)
+		}
+		if err = rows.Err(); err != nil {
+			log.Printf("Employee score ranking rows error: %v", err)
+		}
+	} else {
+		log.Printf("Employee score ranking query error: %v", err)
 	}
 
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30).Format("2006-01-02")
-	rows, _ = models.DB.Query(`
+	rows, err = models.DB.Query(`
 		SELECT DATE(created_at) as date, COUNT(*) as count 
 		FROM referrals 
 		WHERE created_at >= ? 
 		GROUP BY DATE(created_at) 
 		ORDER BY date
 	`, thirtyDaysAgo)
-	defer rows.Close()
 	type DailyTrend struct {
 		Date  string `json:"date"`
 		Count int    `json:"count"`
 	}
 	var trends []DailyTrend
-	for rows.Next() {
-		var t DailyTrend
-		rows.Scan(&t.Date, &t.Count)
-		trends = append(trends, t)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var t DailyTrend
+			rows.Scan(&t.Date, &t.Count)
+			trends = append(trends, t)
+		}
+		if err = rows.Err(); err != nil {
+			log.Printf("Daily trend rows error: %v", err)
+		}
+	} else {
+		log.Printf("Daily trend query error: %v", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -933,7 +994,7 @@ func GetFavoritesByIDs(c *gin.Context) {
 
 	rows, err := models.DB.Query(query, args...)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get favorite jobs"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get favorite jobs: " + err.Error()})
 		return
 	}
 	defer rows.Close()
@@ -941,8 +1002,16 @@ func GetFavoritesByIDs(c *gin.Context) {
 	var jobs []models.Job
 	for rows.Next() {
 		var job models.Job
-		rows.Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt, &job.FavoriteCount)
+		err := rows.Scan(&job.ID, &job.Title, &job.Requirement, &job.SalaryRange, &job.Location, &job.Status, &job.CreatedAt, &job.FavoriteCount)
+		if err != nil {
+			log.Printf("Scan error in favorites: %v", err)
+			continue
+		}
 		jobs = append(jobs, job)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Printf("Rows error in favorites: %v", err)
 	}
 
 	c.JSON(http.StatusOK, jobs)
@@ -976,14 +1045,32 @@ func GetEvaluation(c *gin.Context) {
 	id := c.Param("id")
 
 	var r models.Referral
+	var evaluationPros sql.NullString
+	var evaluationCons sql.NullString
+	var evaluationScore sql.NullInt32
+	var evaluationTime sql.NullTime
+	
 	err := models.DB.QueryRow(
 		"SELECT evaluation_pros, evaluation_cons, evaluation_score, evaluation_time FROM referrals WHERE id = ?",
 		id,
-	).Scan(&r.EvaluationPros, &r.EvaluationCons, &r.EvaluationScore, &r.EvaluationTime)
+	).Scan(&evaluationPros, &evaluationCons, &evaluationScore, &evaluationTime)
 
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Referral not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Referral not found: " + err.Error()})
 		return
+	}
+
+	if evaluationPros.Valid {
+		r.EvaluationPros = evaluationPros.String
+	}
+	if evaluationCons.Valid {
+		r.EvaluationCons = evaluationCons.String
+	}
+	if evaluationScore.Valid {
+		r.EvaluationScore = int(evaluationScore.Int32)
+	}
+	if evaluationTime.Valid {
+		r.EvaluationTime = &evaluationTime.Time
 	}
 
 	c.JSON(http.StatusOK, r)
