@@ -142,5 +142,27 @@ func initDefaultUsers() error {
 		}
 	}
 
+	// 确保 yg 用户存在并且密码正确，不管之前是否已经存在
+	DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", "yg").Scan(&count)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+	if count == 0 {
+		_, err := DB.Exec(
+			"INSERT INTO users (username, password, role, real_name, status) VALUES (?, ?, ?, ?, ?)",
+			"yg", string(hashedPassword), "employee", "员工", "enabled",
+		)
+		if err != nil {
+			log.Println("Failed to create yg user:", err)
+		}
+	} else {
+		// 如果用户已存在，重置密码以确保能登录
+		_, err := DB.Exec(
+			"UPDATE users SET password = ? WHERE username = ?",
+			string(hashedPassword), "yg",
+		)
+		if err != nil {
+			log.Println("Failed to reset yg user password:", err)
+		}
+	}
+
 	return nil
 }
