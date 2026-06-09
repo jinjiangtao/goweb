@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var DB *sql.DB
@@ -50,7 +50,7 @@ type Referral struct {
 
 func InitDB() error {
 	var err error
-	DB, err = sql.Open("sqlite3", "./neitui.db")
+	DB, err = sql.Open("sqlite", "./neitui.db")
 	if err != nil {
 		return err
 	}
