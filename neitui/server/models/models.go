@@ -188,5 +188,33 @@ func initDefaultUsers() error {
 		}
 	}
 
+	// 添加默认测试职位
+	DB.QueryRow("SELECT COUNT(*) FROM jobs").Scan(&count)
+	if count == 0 {
+		_, err := DB.Exec(
+			"INSERT INTO jobs (title, requirement, salary_range, location, status, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+			"前端开发工程师", "1. 熟悉Vue3、React等前端框架\n2. 熟悉HTML、CSS、JavaScript\n3. 有良好的编码习惯", "15k-25k", "北京", "active", 1,
+		)
+		if err != nil {
+			log.Println("Failed to create test job 1:", err)
+		}
+		
+		_, err = DB.Exec(
+			"INSERT INTO jobs (title, requirement, salary_range, location, status, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+			"后端开发工程师", "1. 熟悉Go或Java语言\n2. 熟悉数据库操作\n3. 有后端开发经验", "18k-30k", "上海", "active", 1,
+		)
+		if err != nil {
+			log.Println("Failed to create test job 2:", err)
+		}
+		
+		_, err = DB.Exec(
+			"INSERT INTO jobs (title, requirement, salary_range, location, status, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+			"产品经理", "1. 熟悉产品设计流程\n2. 有互联网产品经验\n3. 良好的沟通能力", "20k-35k", "深圳", "active", 1,
+		)
+		if err != nil {
+			log.Println("Failed to create test job 3:", err)
+		}
+	}
+
 	return nil
 }

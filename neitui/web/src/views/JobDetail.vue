@@ -77,7 +77,7 @@ const showApplyDialog = ref(false)
 const form = ref({
   name: '',
   phone: '',
-  resumeFile: null
+  resumeFile: []
 })
 
 const fetchJobDetail = async () => {
@@ -109,7 +109,7 @@ const beforeRead = (file) => {
 }
 
 const submitApplication = async () => {
-  if (!form.value.name || !form.value.phone || !form.value.resumeFile) {
+  if (!form.value.name || !form.value.phone || !form.value.resumeFile || form.value.resumeFile.length === 0) {
     showToast('请填写完整信息')
     return false
   }
@@ -124,7 +124,7 @@ const submitApplication = async () => {
     formData.append('job_id', route.params.id)
     formData.append('name', form.value.name)
     formData.append('phone', form.value.phone)
-    formData.append('resume_file', form.value.resumeFile.file)
+    formData.append('resume_file', form.value.resumeFile[0].file)
     
     await api.post('/public/submit', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -132,7 +132,7 @@ const submitApplication = async () => {
     
     showToast('投递成功，HR会尽快联系您')
     showApplyDialog.value = false
-    form.value = { name: '', phone: '', resumeFile: null }
+    form.value = { name: '', phone: '', resumeFile: [] }
   } catch (error) {
     console.error('投递失败:', error)
     if (error.response?.data?.error) {
