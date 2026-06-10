@@ -33,7 +33,7 @@
       &lt;el-table-column prop="createdAt" label="时间" width="180" /&gt;
       &lt;el-table-column label="操作" width="120" fixed="right"&gt;
         &lt;template #default="{ row }"&gt;
-          &lt;el-button v-if="row.isWin &amp;&amp; row.status === '待领取'" type="primary" size="small" @click="claimRecord(row)"&gt;标记领取&lt;/el-button&gt;
+          &lt;el-button v-if="row.isWin && row.status === '待领取'" type="primary" size="small" @click="claimRecord(row)"&gt;标记领取&lt;/el-button&gt;
         &lt;/template&gt;
       &lt;/el-table-column&gt;
     &lt;/el-table&gt;
@@ -60,17 +60,17 @@ const api = axios.create({
   }
 })
 
-const prizeNames = computed(() =&gt; {
+const prizeNames = computed(() => {
   const names = new Set()
-  records.value.forEach(r =&gt; {
-    if (r.prizeName &amp;&amp; r.prizeName !== '未中奖') {
+  records.value.forEach(r => {
+    if (r.prizeName && r.prizeName !== '未中奖') {
       names.add(r.prizeName)
     }
   })
   return Array.from(names)
 })
 
-const fetchRecords = async () =&gt; {
+const fetchRecords = async () => {
   const params = {}
   if (query.value.name) params.name = query.value.name
   if (query.value.phone) params.phone = query.value.phone
@@ -80,17 +80,17 @@ const fetchRecords = async () =&gt; {
   records.value = res.data
 }
 
-const claimRecord = async (row) =&gt; {
+const claimRecord = async (row) => {
   await api.put(`/records/${row.id}/claim`)
   ElMessage.success('已标记领取')
   fetchRecords()
 }
 
-const exportRecords = () =&gt; {
+const exportRecords = () => {
   window.open(`http://localhost:8080/api/records/export?token=${localStorage.getItem('token')}`)
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   fetchRecords()
 })
 &lt;/script&gt;
