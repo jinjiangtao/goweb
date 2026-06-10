@@ -7,7 +7,6 @@ import (
 	"github.com/xuri/excelize/v2"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 func GetRecords(c *gin.Context) {
@@ -35,28 +34,27 @@ func GetRecords(c *gin.Context) {
 	}
 
 	var records []models.Record
-	query.Find(&amp;records)
+	query.Find(&records)
 	c.JSON(http.StatusOK, records)
 }
 
 func ClaimRecord(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var record models.Record
-	if err := models.DB.First(&amp;record, id).Error; err != nil {
+	if err := models.DB.First(&record, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
 		return
 	}
 	record.Status = "已领取"
-	models.DB.Save(&amp;record)
+	models.DB.Save(&record)
 	c.JSON(http.StatusOK, record)
 }
 
 func ExportRecords(c *gin.Context) {
 	var records []models.Record
-	models.DB.Order("id desc").Find(&amp;records)
+	models.DB.Order("id desc").Find(&records)
 
 	f := excelize.NewFile()
-	index := f.GetActiveSheetIndex()
 	sheetName := "抽奖记录"
 	f.SetSheetName("Sheet1", sheetName)
 

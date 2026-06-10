@@ -16,7 +16,7 @@ type LotteryRequest struct {
 
 func DoLottery(c *gin.Context) {
 	var req LotteryRequest
-	if err := c.ShouldBindJSON(&amp;req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -25,12 +25,12 @@ func DoLottery(c *gin.Context) {
 	defer models.LotteryMutex.Unlock()
 
 	var enabledPrizes []models.Prize
-	models.DB.Where("enabled = ?", true).Find(&amp;enabledPrizes)
+	models.DB.Where("enabled = ?", true).Find(&enabledPrizes)
 
 	var availablePrizes []models.Prize
 	totalProb := 0.0
 	for _, p := range enabledPrizes {
-		if p.StockUsed &lt; p.Stock {
+		if p.StockUsed < p.Stock {
 			availablePrizes = append(availablePrizes, p)
 			totalProb += p.Probability
 		}
@@ -46,10 +46,10 @@ func DoLottery(c *gin.Context) {
 	currentProb := 0.0
 	for _, p := range availablePrizes {
 		currentProb += p.Probability
-		if randNum &lt;= currentProb {
+		if randNum <= currentProb {
 			prizeName = p.Name
 			isWin = true
-			selectedPrize = &amp;p
+			selectedPrize = &p
 			break
 		}
 	}
@@ -80,7 +80,7 @@ func DoLottery(c *gin.Context) {
 		Status:    status,
 		CreatedAt: time.Now(),
 	}
-	models.DB.Create(&amp;record)
+	models.DB.Create(&record)
 
 	c.JSON(http.StatusOK, gin.H{
 		"isWin":      isWin,

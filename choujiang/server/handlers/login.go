@@ -15,13 +15,13 @@ type LoginRequest struct {
 
 func Login(c *gin.Context) {
 	var req LoginRequest
-	if err := c.ShouldBindJSON(&amp;req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	var admin models.Admin
-	models.DB.Where("username = ? AND password = ?", req.Username, req.Password).First(&amp;admin)
+	models.DB.Where("username = ? AND password = ?", req.Username, req.Password).First(&admin)
 
 	if admin.ID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})

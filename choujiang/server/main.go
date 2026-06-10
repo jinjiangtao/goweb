@@ -12,20 +12,20 @@ import (
 )
 
 func main() {
-	db, err := gorm.Open(sqlite.Open("choujiang.db"), &amp;gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("choujiang.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect database:", err)
 	}
 
-	err = db.AutoMigrate(&amp;models.Admin{}, &amp;models.Prize{}, &amp;models.Record{})
+	err = db.AutoMigrate(&models.Admin{}, &models.Prize{}, &models.Record{})
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
 	var adminCount int64
-	db.Model(&amp;models.Admin{}).Count(&amp;adminCount)
+	db.Model(&models.Admin{}).Count(&adminCount)
 	if adminCount == 0 {
-		db.Create(&amp;models.Admin{
+		db.Create(&models.Admin{
 			Username: "admin",
 			Password: "123456",
 		})

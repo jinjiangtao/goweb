@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var jwtSecret = []byte("choujiang-secret-key-2024")
@@ -25,7 +26,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
-		claims := &amp;Claims{}
+		claims := &Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtSecret, nil
@@ -45,7 +46,7 @@ func GenerateToken(username string) (string, error) {
 	claims := Claims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(jwt.Now().AddDate(0, 0, 7)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(0, 0, 7)),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
