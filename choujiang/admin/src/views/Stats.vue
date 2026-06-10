@@ -1,63 +1,62 @@
+<template>
+  <div>
+    <el-row :gutter="20" style="margin-bottom: 20px">
+      <el-col :span="6">
+        <el-card>
+          <div style="text-align: center">
+            <div style="font-size: 32px; font-weight: bold; color: #409EFF">{{ stats.totalDraws || 0 }}</div>
+            <div style="color: #909399; margin-top: 10px">总抽奖次数</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card>
+          <div style="text-align: center">
+            <div style="font-size: 32px; font-weight: bold; color: #67C23A">{{ stats.winCount || 0 }}</div>
+            <div style="color: #909399; margin-top: 10px">中奖次数</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card>
+          <div style="text-align: center">
+            <div style="font-size: 32px; font-weight: bold; color: #E6A23C">{{ (stats.winRate || 0).toFixed(2) }}%</div>
+            <div style="color: #909399; margin-top: 10px">中奖率</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card>
+          <div style="text-align: center">
+            <div style="font-size: 32px; font-weight: bold; color: #F56C6C">{{ stats.pendingCount || 0 }}</div>
+            <div style="color: #909399; margin-top: 10px">待领取数量</div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
 
-&lt;template&gt;
-  &lt;div&gt;
-    &lt;el-row :gutter="20" style="margin-bottom: 20px"&gt;
-      &lt;el-col :span="6"&gt;
-        &lt;el-card&gt;
-          &lt;div style="text-align: center"&gt;
-            &lt;div style="font-size: 32px; font-weight: bold; color: #409EFF"&gt;{{ stats.totalDraws || 0 }}&lt;/div&gt;
-            &lt;div style="color: #909399; margin-top: 10px"&gt;总抽奖次数&lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/el-card&gt;
-      &lt;/el-col&gt;
-      &lt;el-col :span="6"&gt;
-        &lt;el-card&gt;
-          &lt;div style="text-align: center"&gt;
-            &lt;div style="font-size: 32px; font-weight: bold; color: #67C23A"&gt;{{ stats.winCount || 0 }}&lt;/div&gt;
-            &lt;div style="color: #909399; margin-top: 10px"&gt;中奖次数&lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/el-card&gt;
-      &lt;/el-col&gt;
-      &lt;el-col :span="6"&gt;
-        &lt;el-card&gt;
-          &lt;div style="text-align: center"&gt;
-            &lt;div style="font-size: 32px; font-weight: bold; color: #E6A23C"&gt;{{ (stats.winRate || 0).toFixed(2) }}%&lt;/div&gt;
-            &lt;div style="color: #909399; margin-top: 10px"&gt;中奖率&lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/el-card&gt;
-      &lt;/el-col&gt;
-      &lt;el-col :span="6"&gt;
-        &lt;el-card&gt;
-          &lt;div style="text-align: center"&gt;
-            &lt;div style="font-size: 32px; font-weight: bold; color: #F56C6C"&gt;{{ stats.pendingCount || 0 }}&lt;/div&gt;
-            &lt;div style="color: #909399; margin-top: 10px"&gt;待领取数量&lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/el-card&gt;
-      &lt;/el-col&gt;
-    &lt;/el-row&gt;
+    <el-row :gutter="20">
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <span>奖品中奖统计</span>
+          </template>
+          <div ref="pieChart" style="height: 400px"></div>
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <span>近7天抽奖趋势</span>
+          </template>
+          <div ref="barChart" style="height: 400px"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
+</template>
 
-    &lt;el-row :gutter="20"&gt;
-      &lt;el-col :span="12"&gt;
-        &lt;el-card&gt;
-          &lt;template #header&gt;
-            &lt;span&gt;奖品中奖统计&lt;/span&gt;
-          &lt;/template&gt;
-          &lt;div ref="pieChart" style="height: 400px"&gt;&lt;/div&gt;
-        &lt;/el-card&gt;
-      &lt;/el-col&gt;
-      &lt;el-col :span="12"&gt;
-        &lt;el-card&gt;
-          &lt;template #header&gt;
-            &lt;span&gt;近7天抽奖趋势&lt;/span&gt;
-          &lt;/template&gt;
-          &lt;div ref="barChart" style="height: 400px"&gt;&lt;/div&gt;
-        &lt;/el-card&gt;
-      &lt;/el-col&gt;
-    &lt;/el-row&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
-
-&lt;script setup&gt;
+<script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import axios from 'axios'
 import * as echarts from 'echarts'
@@ -73,18 +72,18 @@ const api = axios.create({
   }
 })
 
-const fetchStats = async () =&gt; {
+const fetchStats = async () => {
   const res = await api.get('/stats')
   stats.value = res.data
-  nextTick(() =&gt; {
+  nextTick(() => {
     renderPieChart()
     renderBarChart()
   })
 }
 
-const renderPieChart = () =&gt; {
+const renderPieChart = () => {
   const chart = echarts.init(pieChart.value)
-  const data = (stats.value.prizeStats || []).map(item =&gt; ({
+  const data = (stats.value.prizeStats || []).map(item => ({
     name: item.prizeName,
     value: item.count
   }))
@@ -108,7 +107,7 @@ const renderPieChart = () =&gt; {
   })
 }
 
-const renderBarChart = () =&gt; {
+const renderBarChart = () => {
   const chart = echarts.init(barChart.value)
   const data = stats.value.dailyStats || []
   chart.setOption({
@@ -116,25 +115,25 @@ const renderBarChart = () =&gt; {
     legend: { data: ['抽奖次数', '中奖次数'] },
     xAxis: {
       type: 'category',
-      data: data.map(item =&gt; item.date)
+      data: data.map(item => item.date)
     },
     yAxis: { type: 'value' },
     series: [
       {
         name: '抽奖次数',
         type: 'bar',
-        data: data.map(item =&gt; item.draws)
+        data: data.map(item => item.draws)
       },
       {
         name: '中奖次数',
         type: 'bar',
-        data: data.map(item =&gt; item.wins)
+        data: data.map(item => item.wins)
       }
     ]
   })
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   fetchStats()
 })
-&lt;/script&gt;
+</script>

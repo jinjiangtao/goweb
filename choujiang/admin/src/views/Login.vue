@@ -1,24 +1,23 @@
+<template>
+  <div class="login-container">
+    <el-card class="login-card">
+      <h2>抽奖转盘后台管理</h2>
+      <el-form :model="loginForm" label-width="80px">
+        <el-form-item label="账号">
+          <el-input v-model="loginForm.username" />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="loginForm.password" type="password" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleLogin" style="width: 100%">登录</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+  </div>
+</template>
 
-&lt;template&gt;
-  &lt;div class="login-container"&gt;
-    &lt;el-card class="login-card"&gt;
-      &lt;h2&gt;抽奖转盘后台管理&lt;/h2&gt;
-      &lt;el-form :model="loginForm" label-width="80px"&gt;
-        &lt;el-form-item label="账号"&gt;
-          &lt;el-input v-model="loginForm.username" /&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item label="密码"&gt;
-          &lt;el-input v-model="loginForm.password" type="password" /&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item&gt;
-          &lt;el-button type="primary" @click="handleLogin" style="width: 100%"&gt;登录&lt;/el-button&gt;
-        &lt;/el-form-item&gt;
-      &lt;/el-form&gt;
-    &lt;/el-card&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
-
-&lt;script setup&gt;
+<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -30,7 +29,7 @@ const loginForm = ref({
   password: ''
 })
 
-const handleLogin = async () =&gt; {
+const handleLogin = async () => {
   try {
     const res = await axios.post('http://localhost:8080/api/login', loginForm.value)
     localStorage.setItem('token', res.data.token)
@@ -40,9 +39,9 @@ const handleLogin = async () =&gt; {
     ElMessage.error('登录失败')
   }
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .login-container {
   display: flex;
   justify-content: center;
@@ -57,4 +56,4 @@ const handleLogin = async () =&gt; {
   text-align: center;
   margin-bottom: 20px;
 }
-&lt;/style&gt;
+</style>
