@@ -72,10 +72,10 @@ const api = axios.create({
   }
 })
 
-const fetchStats = async () => {
-  const res = await api.get('/stats')
+const fetchStats = async () =&gt; {
+  const res = await api.get('/admin/stats')
   stats.value = res.data
-  nextTick(() => {
+  nextTick(() =&gt; {
     renderPieChart()
     renderBarChart()
   })

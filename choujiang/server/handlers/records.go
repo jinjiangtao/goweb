@@ -38,7 +38,31 @@ func GetRecords(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
+func GetRecordsByPhone(c *gin.Context) {
+	phone := c.Query("phone")
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Phone is required"})
+		return
+	}
+
+	var records []models.Record
+	models.DB.Where("phone = ?", phone).Order("id desc").Find(&records)
+	c.JSON(http.StatusOK, records)
+}
+
 func ClaimRecord(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	var record models.Record
+	if err := models.DB.First(&record, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+		return
+	}
+	record.Status = "已领取"
+	models.DB.Save(&record)
+	c.JSON(http.StatusOK, record)
+}
+
+func ClaimRecordPublic(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var record models.Record
 	if err := models.DB.First(&record, id).Error; err != nil {
@@ -83,3 +107,4 @@ func ExportRecords(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename=records.xlsx")
 	f.Write(c.Writer)
 }
+

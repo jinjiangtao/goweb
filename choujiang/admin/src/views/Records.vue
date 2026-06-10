@@ -69,24 +69,24 @@ const prizeNames = computed(() => {
   return Array.from(names)
 })
 
-const fetchRecords = async () => {
+const fetchRecords = async () =&gt; {
   const params = {}
   if (query.value.name) params.name = query.value.name
   if (query.value.phone) params.phone = query.value.phone
   if (query.value.prizeName) params.prizeName = query.value.prizeName
   if (query.value.isWin) params.isWin = query.value.isWin
-  const res = await api.get('/records', { params })
+  const res = await api.get('/admin/records', { params })
   records.value = res.data
 }
 
-const claimRecord = async (row) => {
-  await api.put(`/records/${row.id}/claim`)
+const claimRecord = async (row) =&gt; {
+  await api.put(`/admin/records/${row.id}/claim`)
   ElMessage.success('已标记领取')
   fetchRecords()
 }
 
-const exportRecords = () => {
-  window.open(`http://localhost:8080/api/records/export?token=${localStorage.getItem('token')}`)
+const exportRecords = () =&gt; {
+  window.open(`http://localhost:8080/api/admin/records/export?token=${localStorage.getItem('token')}`)
 }
 
 onMounted(() => {

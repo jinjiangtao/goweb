@@ -1,14 +1,14 @@
-
 package main
 
 import (
 	"choujiang/handlers"
-	"choujiang/models"
 	"choujiang/middleware"
+	"choujiang/models"
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
-	"log"
 )
 
 func main() {
@@ -47,22 +47,25 @@ func main() {
 	})
 
 	r.POST("/api/login", handlers.Login)
-	r.POST("/api/lottery", handlers.DoLottery)
+	r.GET("/api/prizes", handlers.GetPublicPrizes)
+	r.POST("/api/lottery/draw", handlers.DoLottery)
+	r.GET("/api/lottery/records", handlers.GetRecordsByPhone)
+	r.PUT("/api/lottery/records/:id/claim", handlers.ClaimRecordPublic)
 
 	auth := r.Group("/api")
 	auth.Use(middleware.AuthMiddleware())
 	{
-		auth.GET("/prizes", handlers.GetPrizes)
-		auth.POST("/prizes", handlers.CreatePrize)
-		auth.PUT("/prizes/:id", handlers.UpdatePrize)
-		auth.DELETE("/prizes/:id", handlers.DeletePrize)
-		auth.PUT("/prizes/:id/toggle", handlers.TogglePrize)
+		auth.GET("/admin/prizes", handlers.GetPrizes)
+		auth.POST("/admin/prizes", handlers.CreatePrize)
+		auth.PUT("/admin/prizes/:id", handlers.UpdatePrize)
+		auth.DELETE("/admin/prizes/:id", handlers.DeletePrize)
+		auth.PUT("/admin/prizes/:id/toggle", handlers.TogglePrize)
 
-		auth.GET("/records", handlers.GetRecords)
-		auth.PUT("/records/:id/claim", handlers.ClaimRecord)
-		auth.GET("/records/export", handlers.ExportRecords)
+		auth.GET("/admin/records", handlers.GetRecords)
+		auth.PUT("/admin/records/:id/claim", handlers.ClaimRecord)
+		auth.GET("/admin/records/export", handlers.ExportRecords)
 
-		auth.GET("/stats", handlers.GetStats)
+		auth.GET("/admin/stats", handlers.GetStats)
 	}
 
 	log.Println("Server running on http://localhost:8080")

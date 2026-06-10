@@ -14,6 +14,12 @@ func GetPrizes(c *gin.Context) {
 	c.JSON(http.StatusOK, prizes)
 }
 
+func GetPublicPrizes(c *gin.Context) {
+	var prizes []models.Prize
+	models.DB.Where("enabled = ?", true).Order("id desc").Find(&prizes)
+	c.JSON(http.StatusOK, prizes)
+}
+
 func CreatePrize(c *gin.Context) {
 	var prize models.Prize
 	if err := c.ShouldBindJSON(&prize); err != nil {
@@ -94,3 +100,4 @@ func TogglePrize(c *gin.Context) {
 	models.DB.Save(&prize)
 	c.JSON(http.StatusOK, prize)
 }
+
