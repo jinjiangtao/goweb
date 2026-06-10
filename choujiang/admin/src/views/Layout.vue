@@ -18,6 +18,9 @@
         <el-menu-item index="/records">
           <span>抽奖记录</span>
         </el-menu-item>
+        <el-menu-item index="/address">
+          <span>地址库管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

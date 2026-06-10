@@ -4,6 +4,7 @@ import Layout from './views/Layout.vue'
 import Prizes from './views/Prizes.vue'
 import Records from './views/Records.vue'
 import Stats from './views/Stats.vue'
+import AddressManage from './views/AddressManage.vue'
 
 const routes = [
   { path: '/login', component: Login },
@@ -14,7 +15,8 @@ const routes = [
     children: [
       { path: 'prizes', component: Prizes },
       { path: 'records', component: Records },
-      { path: 'stats', component: Stats }
+      { path: 'stats', component: Stats },
+      { path: 'address', component: AddressManage }
     ]
   }
 ]

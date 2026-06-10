@@ -42,7 +42,11 @@
         <div class="result-text">{{ resultText }}</div>
       </div>
       <template #footer>
-        <el-button type="primary" @click="resultVisible = false">确定</el-button>
+        <el-button v-if="!isWinResult" type="primary" @click="resultVisible = false">确定</el-button>
+        <template v-else>
+          <el-button @click="resultVisible = false">稍后填写</el-button>
+          <el-button type="primary" @click="goToMyPrizes">立即填写地址</el-button>
+        </template>
       </template>
     </el-dialog>
   </div>
@@ -64,6 +68,8 @@ const resultVisible = ref(false)
 const resultTitle = ref('')
 const resultIcon = ref('')
 const resultText = ref('')
+const isWinResult = ref(false)
+const latestRecord = ref(null)
 
 const userForm = ref({
   name: '',
@@ -170,10 +176,13 @@ const startLottery = () => {
         resultTitle.value = '🎉 恭喜中奖！'
         resultIcon.value = '🎁'
         resultText.value = `恭喜您获得：${data.prizeName}`
+        isWinResult.value = true
+        latestRecord.value = data
       } else {
         resultTitle.value = '😊 谢谢参与'
         resultIcon.value = '🍀'
         resultText.value = '很遗憾，下次一定会中奖的！'
+        isWinResult.value = false
       }
       resultVisible.value = true
     }, 4000)
@@ -181,6 +190,11 @@ const startLottery = () => {
     isSpinning.value = false
     ElMessage.error('抽奖失败，请稍后重试')
   })
+}
+
+const goToMyPrizes = () => {
+  resultVisible.value = false
+  router.push('/my-prizes')
 }
 
 const submitUserForm = () => {

@@ -17,10 +17,12 @@ func main() {
 		log.Fatal("Failed to connect database:", err)
 	}
 
-	err = db.AutoMigrate(&models.Admin{}, &models.Prize{}, &models.Record{})
+	err = db.AutoMigrate(&models.Admin{}, &models.Prize{}, &models.Record{}, &models.Address{})
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
+
+	handlers.InitAddressData(db)
 
 	var adminCount int64
 	db.Model(&models.Admin{}).Count(&adminCount)
@@ -52,6 +54,11 @@ func main() {
 	r.GET("/api/lottery/records", handlers.GetRecordsByPhone)
 	r.PUT("/api/lottery/records/:id/claim", handlers.ClaimRecordPublic)
 
+	r.GET("/api/address/provinces", handlers.GetProvinces)
+	r.GET("/api/address/cities", handlers.GetCities)
+	r.GET("/api/address/districts", handlers.GetDistricts)
+	r.POST("/api/lottery/records/:id/address", handlers.SubmitAddress)
+
 	auth := r.Group("/api")
 	auth.Use(middleware.AuthMiddleware())
 	{
@@ -64,8 +71,17 @@ func main() {
 		auth.GET("/admin/records", handlers.GetRecords)
 		auth.PUT("/admin/records/:id/claim", handlers.ClaimRecord)
 		auth.GET("/admin/records/export", handlers.ExportRecords)
+		auth.PUT("/admin/records/:id/address", handlers.AdminUpdateRecordAddress)
 
 		auth.GET("/admin/stats", handlers.GetStats)
+
+		auth.GET("/admin/address/provinces", handlers.AdminGetProvinces)
+		auth.GET("/admin/address/cities/:provinceId", handlers.AdminGetCities)
+		auth.GET("/admin/address/districts/:cityId", handlers.AdminGetDistricts)
+		auth.GET("/admin/address/tree", handlers.AdminGetAddressTree)
+		auth.POST("/admin/address", handlers.AdminAddAddress)
+		auth.PUT("/admin/address/:id", handlers.AdminUpdateAddress)
+		auth.DELETE("/admin/address/:id", handlers.AdminDeleteAddress)
 	}
 
 	log.Println("Server running on http://localhost:8080")

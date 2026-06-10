@@ -1,12 +1,12 @@
-
 package handlers
 
 import (
 	"choujiang/models"
-	"github.com/gin-gonic/gin"
-	"github.com/xuri/excelize/v2"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
 )
 
 func GetRecords(c *gin.Context) {
@@ -82,7 +82,7 @@ func ExportRecords(c *gin.Context) {
 	sheetName := "抽奖记录"
 	f.SetSheetName("Sheet1", sheetName)
 
-	headers := []string{"ID", "姓名", "手机号", "奖品", "是否中奖", "状态", "时间"}
+	headers := []string{"ID", "姓名", "手机号", "奖品", "是否中奖", "状态", "收货人", "收货电话", "省份", "城市", "区县", "详细地址", "发货状态", "物流单号", "时间"}
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheetName, cell, header)
@@ -100,11 +100,18 @@ func ExportRecords(c *gin.Context) {
 		}
 		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), isWinStr)
 		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), record.Status)
-		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), record.CreatedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), record.ReceiverName)
+		f.SetCellValue(sheetName, "H"+strconv.Itoa(row), record.ReceiverPhone)
+		f.SetCellValue(sheetName, "I"+strconv.Itoa(row), record.Province)
+		f.SetCellValue(sheetName, "J"+strconv.Itoa(row), record.City)
+		f.SetCellValue(sheetName, "K"+strconv.Itoa(row), record.District)
+		f.SetCellValue(sheetName, "L"+strconv.Itoa(row), record.DetailAddress)
+		f.SetCellValue(sheetName, "M"+strconv.Itoa(row), record.ShippingStatus)
+		f.SetCellValue(sheetName, "N"+strconv.Itoa(row), record.TrackingNumber)
+		f.SetCellValue(sheetName, "O"+strconv.Itoa(row), record.CreatedAt.Format("2006-01-02 15:04:05"))
 	}
 
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", "attachment; filename=records.xlsx")
 	f.Write(c.Writer)
 }
-
