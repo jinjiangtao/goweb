@@ -1,55 +1,54 @@
+<template>
+  <div class="home">
+    <div class="header">
+      <h1>🎉 幸运大转盘 🎉</h1>
+      <p>好运转转转，大奖抽不停！</p>
+    </div>
 
-&lt;template&gt;
-  &lt;div class="home"&gt;
-    &lt;div class="header"&gt;
-      &lt;h1&gt;🎉 幸运大转盘 🎉&lt;/h1&gt;
-      &lt;p&gt;好运转转转，大奖抽不停！&lt;/p&gt;
-    &lt;/div&gt;
-
-    &lt;div class="wheel-container"&gt;
-      &lt;div class="wheel-wrapper"&gt;
-        &lt;div class="pointer"&gt;&lt;/div&gt;
-        &lt;canvas ref="wheelCanvas" :style="{ transform: `rotate(${rotation}deg)` }" class="wheel"&gt;&lt;/canvas&gt;
-        &lt;div class="center-btn" @click="startLottery" :class="{ disabled: isSpinning }"&gt;
+    <div class="wheel-container">
+      <div class="wheel-wrapper">
+        <div class="pointer"></div>
+        <canvas ref="wheelCanvas" :style="{ transform: `rotate(${rotation}deg)` }" class="wheel"></canvas>
+        <div class="center-btn" @click="startLottery" :class="{ disabled: isSpinning }">
           {{ isSpinning ? '抽奖中...' : '开始抽奖' }}
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+        </div>
+      </div>
+    </div>
 
-    &lt;div class="footer"&gt;
-      &lt;el-button type="primary" class="my-prizes-btn" @click="$router.push('/my-prizes')"&gt;
+    <div class="footer">
+      <el-button type="primary" class="my-prizes-btn" @click="$router.push('/my-prizes')">
         🎁 我的奖品
-      &lt;/el-button&gt;
-    &lt;/div&gt;
+      </el-button>
+    </div>
 
-    &lt;el-dialog v-model="userFormVisible" title="请填写信息" width="90%"&gt;
-      &lt;el-form :model="userForm" label-width="80px"&gt;
-        &lt;el-form-item label="姓名"&gt;
-          &lt;el-input v-model="userForm.name" placeholder="请输入姓名"&gt;&lt;/el-input&gt;
-        &lt;/el-form-item&gt;
-        &lt;el-form-item label="手机号"&gt;
-          &lt;el-input v-model="userForm.phone" placeholder="请输入11位手机号" maxlength="11"&gt;&lt;/el-input&gt;
-        &lt;/el-form-item&gt;
-      &lt;/el-form&gt;
-      &lt;template #footer&gt;
-        &lt;el-button @click="userFormVisible = false"&gt;取消&lt;/el-button&gt;
-        &lt;el-button type="primary" @click="submitUserForm"&gt;确定&lt;/el-button&gt;
-      &lt;/template&gt;
-    &lt;/el-dialog&gt;
+    <el-dialog v-model="userFormVisible" title="请填写信息" width="90%">
+      <el-form :model="userForm" label-width="80px">
+        <el-form-item label="姓名">
+          <el-input v-model="userForm.name" placeholder="请输入姓名"></el-input>
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="userForm.phone" placeholder="请输入11位手机号" maxlength="11"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="userFormVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitUserForm">确定</el-button>
+      </template>
+    </el-dialog>
 
-    &lt;el-dialog v-model="resultVisible" :title="resultTitle" width="90%"&gt;
-      &lt;div class="result-content"&gt;
-        &lt;div class="result-icon"&gt;{{ resultIcon }}&lt;/div&gt;
-        &lt;div class="result-text"&gt;{{ resultText }}&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;template #footer&gt;
-        &lt;el-button type="primary" @click="resultVisible = false"&gt;确定&lt;/el-button&gt;
-      &lt;/template&gt;
-    &lt;/el-dialog&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+    <el-dialog v-model="resultVisible" :title="resultTitle" width="90%">
+      <div class="result-content">
+        <div class="result-icon">{{ resultIcon }}</div>
+        <div class="result-text">{{ resultText }}</div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="resultVisible = false">确定</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -82,7 +81,7 @@ const colors = [
   '#A8D8EA'
 ]
 
-onMounted(() =&gt; {
+onMounted(() => {
   loadPrizes()
   const saved = localStorage.getItem('lottery_user')
   if (saved) {
@@ -90,23 +89,23 @@ onMounted(() =&gt; {
   }
 })
 
-const loadPrizes = async () =&gt; {
+const loadPrizes = async () => {
   try {
     const res = await getPrizes()
     prizes.value = res.data.slice(0, 8)
-    if (prizes.value.length &lt; 8) {
+    if (prizes.value.length < 8) {
       const addCount = 8 - prizes.value.length
-      for (let i = 0; i &lt; addCount; i++) {
+      for (let i = 0; i < addCount; i++) {
         prizes.value.push({ id: 0, name: '谢谢参与', probability: 0, enabled: true })
       }
     }
-    nextTick(() =&gt; drawWheel())
+    nextTick(() => drawWheel())
   } catch (err) {
     ElMessage.error('加载奖品失败')
   }
 }
 
-const drawWheel = () =&gt; {
+const drawWheel = () => {
   const canvas = wheelCanvas.value
   canvas.width = 320
   canvas.height = 320
@@ -117,7 +116,7 @@ const drawWheel = () =&gt; {
 
   const segmentAngle = (2 * Math.PI) / prizes.value.length
 
-  prizes.value.forEach((prize, index) =&gt; {
+  prizes.value.forEach((prize, index) => {
     ctx.beginPath()
     ctx.moveTo(centerX, centerY)
     ctx.arc(centerX, centerY, radius, index * segmentAngle, (index + 1) * segmentAngle)
@@ -139,7 +138,7 @@ const drawWheel = () =&gt; {
   })
 }
 
-const startLottery = () =&gt; {
+const startLottery = () => {
   if (isSpinning.value) return
 
   if (!userForm.value.name || !userForm.value.phone) {
@@ -153,10 +152,10 @@ const startLottery = () =&gt; {
   }
 
   isSpinning.value = true
-  doLottery({ name: userForm.value.name, phone: userForm.value.phone }).then(res =&gt; {
+  doLottery({ name: userForm.value.name, phone: userForm.value.phone }).then(res => {
     const data = res.data
-    const prizeIndex = prizes.value.findIndex(p =&gt; p.name === data.prizeName)
-    const targetIndex = prizeIndex &gt;= 0 ? prizeIndex : 0
+    const prizeIndex = prizes.value.findIndex(p => p.name === data.prizeName)
+    const targetIndex = prizeIndex >= 0 ? prizeIndex : 0
 
     const spins = 5
     const segmentAngle = 360 / prizes.value.length
@@ -165,7 +164,7 @@ const startLottery = () =&gt; {
 
     rotation.value = totalRotation
 
-    setTimeout(() =&gt; {
+    setTimeout(() => {
       isSpinning.value = false
       if (data.isWin) {
         resultTitle.value = '🎉 恭喜中奖！'
@@ -178,13 +177,13 @@ const startLottery = () =&gt; {
       }
       resultVisible.value = true
     }, 4000)
-  }).catch(() =&gt; {
+  }).catch(() => {
     isSpinning.value = false
     ElMessage.error('抽奖失败，请稍后重试')
   })
 }
 
-const submitUserForm = () =&gt; {
+const submitUserForm = () => {
   if (!userForm.value.name) {
     ElMessage.warning('请输入姓名')
     return
@@ -197,9 +196,9 @@ const submitUserForm = () =&gt; {
   userFormVisible.value = false
   startLottery()
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .home {
   min-height: 100vh;
   padding: 20px;
@@ -321,4 +320,4 @@ const submitUserForm = () =&gt; {
   font-size: 20px;
   color: #333;
 }
-&lt;/style&gt;
+</style>

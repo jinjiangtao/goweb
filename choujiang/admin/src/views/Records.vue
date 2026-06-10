@@ -69,7 +69,7 @@ const prizeNames = computed(() => {
   return Array.from(names)
 })
 
-const fetchRecords = async () =&gt; {
+const fetchRecords = async () => {
   const params = {}
   if (query.value.name) params.name = query.value.name
   if (query.value.phone) params.phone = query.value.phone
@@ -79,13 +79,13 @@ const fetchRecords = async () =&gt; {
   records.value = res.data
 }
 
-const claimRecord = async (row) =&gt; {
+const claimRecord = async (row) => {
   await api.put(`/admin/records/${row.id}/claim`)
   ElMessage.success('已标记领取')
   fetchRecords()
 }
 
-const exportRecords = () =&gt; {
+const exportRecords = () => {
   window.open(`http://localhost:8080/api/admin/records/export?token=${localStorage.getItem('token')}`)
 }
 

@@ -1,49 +1,48 @@
+<template>
+  <div class="my-prizes">
+    <div class="header">
+      <el-button @click="$router.back()" icon="ArrowLeft" circle></el-button>
+      <h2>🎁 我的奖品</h2>
+      <div style="width: 40px;"></div>
+    </div>
 
-&lt;template&gt;
-  &lt;div class="my-prizes"&gt;
-    &lt;div class="header"&gt;
-      &lt;el-button @click="$router.back()" icon="ArrowLeft" circle /&gt;
-      &lt;h2&gt;🎁 我的奖品&lt;/h2&gt;
-      &lt;div style="width: 40px;"&gt;&lt;/div&gt;
-    &lt;/div&gt;
+    <div class="content">
+      <div v-if="!phone" class="phone-form">
+        <el-input v-model="inputPhone" placeholder="请输入手机号查询" maxlength="11"></el-input>
+        <el-button type="primary" @click="loadRecords" style="margin-top: 15px; width: 100%;">查询</el-button>
+      </div>
 
-    &lt;div class="content"&gt;
-      &lt;div v-if="!phone" class="phone-form"&gt;
-        &lt;el-input v-model="inputPhone" placeholder="请输入手机号查询" maxlength="11" /&gt;
-        &lt;el-button type="primary" @click="loadRecords" style="margin-top: 15px; width: 100%;"&gt;查询&lt;/el-button&gt;
-      &lt;/div&gt;
+      <div v-else>
+        <div v-if="records.length === 0" class="empty">
+          <div class="empty-icon">🎊</div>
+          <p>暂无抽奖记录</p>
+          <el-button type="primary" @click="$router.push('/')" style="margin-top: 20px;">去抽奖</el-button>
+        </div>
 
-      &lt;div v-else&gt;
-        &lt;div v-if="records.length === 0" class="empty"&gt;
-          &lt;div class="empty-icon"&gt;🎊&lt;/div&gt;
-          &lt;p&gt;暂无抽奖记录&lt;/p&gt;
-          &lt;el-button type="primary" @click="$router.push('/')" style="margin-top: 20px;"&gt;去抽奖&lt;/el-button&gt;
-        &lt;/div&gt;
-
-        &lt;div v-else class="records-list"&gt;
-          &lt;div v-for="record in records" :key="record.id" class="record-item"&gt;
-            &lt;div class="record-info"&gt;
-              &lt;div class="prize-name"&gt;{{ record.prizeName }}&lt;/div&gt;
-              &lt;div class="prize-time"&gt;{{ formatTime(record.createdAt) }}&lt;/div&gt;
-              &lt;div class="prize-status" :class="{ claimed: record.status === '已领取' }"&gt;{{ record.status }}&lt;/div&gt;
-            &lt;/div&gt;
-            &lt;el-button 
-              v-if="record.isWin &amp;&amp; record.status !== '已领取'" 
+        <div v-else class="records-list">
+          <div v-for="record in records" :key="record.id" class="record-item">
+            <div class="record-info">
+              <div class="prize-name">{{ record.prizeName }}</div>
+              <div class="prize-time">{{ formatTime(record.createdAt) }}</div>
+              <div class="prize-status" :class="{ claimed: record.status === '已领取' }">{{ record.status }}</div>
+            </div>
+            <el-button 
+              v-if="record.isWin && record.status !== '已领取'" 
               type="warning" 
               size="small"
               @click="claimPrize(record)"
               :loading="claimingId === record.id"
-            &gt;
+            >
               去领取
-            &lt;/el-button&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+            </el-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyRecords, claimRecord } from '../utils/api'
@@ -53,7 +52,7 @@ const inputPhone = ref('')
 const records = ref([])
 const claimingId = ref(null)
 
-onMounted(() =&gt; {
+onMounted(() => {
   const saved = localStorage.getItem('lottery_user')
   if (saved) {
     const user = JSON.parse(saved)
@@ -63,7 +62,7 @@ onMounted(() =&gt; {
   }
 })
 
-const loadRecords = async () =&gt; {
+const loadRecords = async () => {
   if (!inputPhone.value) {
     ElMessage.warning('请输入手机号')
     return
@@ -81,7 +80,7 @@ const loadRecords = async () =&gt; {
   }
 }
 
-const claimPrize = async (record) =&gt; {
+const claimPrize = async (record) => {
   claimingId.value = record.id
   try {
     await claimRecord(record.id)
@@ -94,13 +93,13 @@ const claimPrize = async (record) =&gt; {
   }
 }
 
-const formatTime = (time) =&gt; {
+const formatTime = (time) => {
   const date = new Date(time)
   return date.toLocaleString('zh-CN')
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .my-prizes {
   min-height: 100vh;
   display: flex;
@@ -195,4 +194,4 @@ const formatTime = (time) =&gt; {
 .prize-status.claimed {
   color: #67c23a;
 }
-&lt;/style&gt;
+</style>
