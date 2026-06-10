@@ -35,15 +35,67 @@ const provinceName = ref('')
 const cityName = ref('')
 const districtName = ref('')
 
-onMounted(() => {
-  loadProvinces()
-})
+// 先定义所有函数
+const emitValue = () => {
+  emit('update:modelValue', {
+    province: provinceName.value,
+    city: cityName.value,
+    district: districtName.value
+  })
+}
 
-watch(() => props.modelValue, (val) => {
-  if (val && Object.keys(val).length > 0) {
-    initFromValue(val)
+const handleDistrictChange = (id) => {
+  districtId.value = id
+  
+  const district = districts.value.find(d => d.id === id)
+  if (district) {
+    districtName.value = district.name
   }
-}, { immediate: true, deep: true })
+  
+  emitValue()
+}
+
+const handleCityChange = async (id) => {
+  cityId.value = id
+  districtId.value = null
+  districts.value = []
+  
+  const city = cities.value.find(c => c.id === id)
+  if (city) {
+    cityName.value = city.name
+  }
+  
+  try {
+    const res = await getDistricts(id)
+    districts.value = res.data
+  } catch (err) {
+    console.error('Failed to load districts', err)
+  }
+  
+  emitValue()
+}
+
+const handleProvinceChange = async (id) => {
+  provinceId.value = id
+  cityId.value = null
+  districtId.value = null
+  cities.value = []
+  districts.value = []
+  
+  const province = provinces.value.find(p => p.id === id)
+  if (province) {
+    provinceName.value = province.name
+  }
+  
+  try {
+    const res = await getCities(id)
+    cities.value = res.data
+  } catch (err) {
+    console.error('Failed to load cities', err)
+  }
+  
+  emitValue()
+}
 
 const initFromValue = async (val) => {
   if (val.province && provinces.value.length > 0) {
@@ -72,71 +124,26 @@ const loadProvinces = async () => {
   try {
     const res = await getProvinces()
     provinces.value = res.data
+    
+    // 省份加载完成后，检查是否需要初始化选中值
+    if (props.modelValue && Object.keys(props.modelValue).length > 0) {
+      await initFromValue(props.modelValue)
+    }
   } catch (err) {
     console.error('Failed to load provinces', err)
   }
 }
 
-const handleProvinceChange = async (id) => {
-  provinceId.value = id
-  cityId.value = null
-  districtId.value = null
-  cities.value = []
-  districts.value = []
-  
-  const province = provinces.value.find(p => p.id === id)
-  if (province) {
-    provinceName.value = province.name
-  }
-  
-  try {
-    const res = await getCities(id)
-    cities.value = res.data
-  } catch (err) {
-    console.error('Failed to load cities', err)
-  }
-  
-  emitValue()
-}
+onMounted(() => {
+  loadProvinces()
+})
 
-const handleCityChange = async (id) => {
-  cityId.value = id
-  districtId.value = null
-  districts.value = []
-  
-  const city = cities.value.find(c => c.id === id)
-  if (city) {
-    cityName.value = city.name
+// 监听 modelValue 变化（但不 immediate）
+watch(() => props.modelValue, async (val) => {
+  if (val && Object.keys(val).length > 0 && provinces.value.length > 0) {
+    await initFromValue(val)
   }
-  
-  try {
-    const res = await getDistricts(id)
-    districts.value = res.data
-  } catch (err) {
-    console.error('Failed to load districts', err)
-  }
-  
-  emitValue()
-}
-
-const handleDistrictChange = (id) => {
-  districtId.value = id
-  
-  const district = districts.value.find(d => d.id === id)
-  if (district) {
-    districtName.value = district.name
-  }
-  
-  emitValue()
-}
-
-const emitValue = () => {
-  emit('update:modelValue', {
-    province: provinceName.value,
-    city: cityName.value,
-    district: districtName.value
-  })
-}
+}, { deep: true })
 </script>
 
 <style scoped>
