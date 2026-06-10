@@ -34,9 +34,13 @@ const districts = ref([])
 const provinceName = ref('')
 const cityName = ref('')
 const districtName = ref('')
+const isInitializing = ref(false) // 新增：用于防止初始化时的循环
 
 // 先定义所有函数
 const emitValue = () => {
+  if (isInitializing.value) {
+    return // 初始化过程中不 emit
+  }
   emit('update:modelValue', {
     province: provinceName.value,
     city: cityName.value,
@@ -98,25 +102,50 @@ const handleProvinceChange = async (id) => {
 }
 
 const initFromValue = async (val) => {
-  if (val.province && provinces.value.length > 0) {
+  if (!val.province || provinces.value.length === 0) {
+    return
+  }
+
+  isInitializing.value = true // 开始初始化，设置标志
+
+  try {
     const province = provinces.value.find(p => p.name === val.province)
     if (province) {
       provinceId.value = province.id
-      await handleProvinceChange(province.id)
-      if (val.city) {
-        const city = cities.value.find(c => c.name === val.city)
-        if (city) {
-          cityId.value = city.id
-          await handleCityChange(city.id)
-          if (val.district) {
-            const district = districts.value.find(d => d.name === val.district)
-            if (district) {
-              districtId.value = district.id
+      provinceName.value = province.name
+      
+      try {
+        const cityRes = await getCities(province.id)
+        cities.value = cityRes.data
+        
+        if (val.city) {
+          const city = cities.value.find(c => c.name === val.city)
+          if (city) {
+            cityId.value = city.id
+            cityName.value = city.name
+            
+            try {
+              const districtRes = await getDistricts(city.id)
+              districts.value = districtRes.data
+              
+              if (val.district) {
+                const district = districts.value.find(d => d.name === val.district)
+                if (district) {
+                  districtId.value = district.id
+                  districtName.value = district.name
+                }
+              }
+            } catch (err) {
+              console.error('Failed to load districts during init', err)
             }
           }
         }
+      } catch (err) {
+        console.error('Failed to load cities during init', err)
       }
     }
+  } finally {
+    isInitializing.value = false // 初始化完成，清除标志
   }
 }
 
@@ -139,9 +168,21 @@ onMounted(() => {
 })
 
 // 监听 modelValue 变化（但不 immediate）
-watch(() => props.modelValue, async (val) => {
-  if (val && Object.keys(val).length > 0 && provinces.value.length > 0) {
-    await initFromValue(val)
+watch(() => props.modelValue, async (newVal, oldVal) => {
+  // 只在真正有变化时才处理，且避开初始化阶段
+  if (isInitializing.value) {
+    return
+  }
+  
+  if (newVal && Object.keys(newVal).length > 0 && provinces.value.length > 0) {
+    // 检查是否真的有变化，避免相同值导致的循环
+    const hasProvinceChange = newVal.province !== oldVal?.province
+    const hasCityChange = newVal.city !== oldVal?.city
+    const hasDistrictChange = newVal.district !== oldVal?.district
+    
+    if (hasProvinceChange || hasCityChange || hasDistrictChange) {
+      await initFromValue(newVal)
+    }
   }
 }, { deep: true })
 </script>
