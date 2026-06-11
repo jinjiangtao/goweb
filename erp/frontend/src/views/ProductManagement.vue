@@ -25,18 +25,22 @@
       </template>
       
       <el-table :data="tableData" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="ID" width="80">
+          <template #default="{ row }">
+            {{ row.id || row.ID || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="产品名称" width="200" />
         <el-table-column prop="code" label="产品编码" width="150" />
-        <el-table-column prop="price" label="价格" width="120">
+        <el-table-column label="价格" width="120">
           <template #default="{ row }">
-            ¥{{ row.price?.toFixed(2) || 0 }}
+            ¥{{ (row.price || row.Price || 0).toFixed(2) }}
           </template>
         </el-table-column>
         <el-table-column prop="spec" label="规格" />
         <el-table-column label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            {{ formatDate(row.createdAt || row.CreatedAt) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="200">
@@ -136,9 +140,13 @@ const fetchData = async () => {
       params.name = searchKeyword.value
     }
     const res = await getProducts(params)
+    console.log('产品列表完整响应:', res)
     tableData.value = res.data?.list || []
     total.value = res.data?.total || 0
     console.log('产品列表数据:', tableData.value)
+    if (tableData.value.length > 0) {
+      console.log('第一个产品数据:', tableData.value[0])
+    }
   } catch (error) {
     ElMessage.error('获取产品列表失败')
   }
@@ -156,14 +164,15 @@ const handleAdd = () => {
 }
 
 const handleEdit = async (row) => {
+  const rowId = row.id || row.ID
   try {
-    const res = await getProduct(row.id)
+    const res = await getProduct(rowId)
     const product = res.data
     Object.assign(form, {
-      id: product.id,
+      id: product.id || product.ID,
       name: product.name,
       code: product.code,
-      price: product.price,
+      price: product.price || product.Price || 0,
       spec: product.spec
     })
     dialogTitle.value = '编辑产品'
@@ -175,13 +184,15 @@ const handleEdit = async (row) => {
 }
 
 const handleDelete = async (row) => {
+  const rowId = row.id || row.ID
   try {
-    if (!row || !row.id) {
+    if (!rowId) {
       ElMessage.error('产品ID不存在，无法删除')
+      console.log('删除时row数据:', row)
       return
     }
     await ElMessageBox.confirm('确定要删除该产品吗？', '提示', { type: 'warning' })
-    await deleteProduct(row.id)
+    await deleteProduct(rowId)
     ElMessage.success('删除成功')
     fetchData()
   } catch (error) {

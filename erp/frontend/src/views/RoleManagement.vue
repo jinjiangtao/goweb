@@ -12,7 +12,11 @@
       </template>
       
       <el-table :data="tableData" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="ID" width="80">
+          <template #default="{ row }">
+            {{ row.id || row.ID || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="角色名称" width="150" />
         <el-table-column prop="code" label="角色代码" width="150" />
         <el-table-column prop="description" label="描述" />
@@ -25,7 +29,7 @@
         </el-table-column>
         <el-table-column label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            {{ formatDate(row.createdAt || row.CreatedAt) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="300">
@@ -147,14 +151,16 @@ const buildMenuTree = (menus) => {
   const result = []
   
   menus.forEach(menu => {
-    menuMap[menu.id] = { ...menu, children: [] }
+    menuMap[menu.id || menu.ID] = { ...menu, id: menu.id || menu.ID, children: [] }
   })
   
   menus.forEach(menu => {
-    if (!menu.parentId || menu.parentId === 0) {
-      result.push(menuMap[menu.id])
-    } else if (menuMap[menu.parentId]) {
-      menuMap[menu.parentId].children.push(menuMap[menu.id])
+    const menuId = menu.id || menu.ID
+    const parentId = menu.parentId || menu.ParentId || 0
+    if (!parentId || parentId === 0) {
+      result.push(menuMap[menuId])
+    } else if (menuMap[parentId]) {
+      menuMap[parentId].children.push(menuMap[menuId])
     }
   })
   
@@ -164,7 +170,13 @@ const buildMenuTree = (menus) => {
 const fetchData = async () => {
   try {
     const res = await getRoles()
+    console.log('角色列表完整响应:', res)
+    console.log('角色列表数据:', res.data)
     tableData.value = res.data?.list || (Array.isArray(res.data) ? res.data : [])
+    console.log('最终tableData:', tableData.value)
+    if (tableData.value.length > 0) {
+      console.log('第一个角色数据:', tableData.value[0])
+    }
   } catch (error) {
     ElMessage.error('获取角色列表失败')
   }
@@ -187,11 +199,12 @@ const handleAdd = () => {
 }
 
 const handleEdit = async (row) => {
+  const rowId = row.id || row.ID
   try {
-    const res = await getRole(row.id)
+    const res = await getRole(rowId)
     const role = res.data
     Object.assign(form, {
-      id: role.id,
+      id: role.id || role.ID,
       name: role.name,
       code: role.code,
       description: role.description,
@@ -206,16 +219,18 @@ const handleEdit = async (row) => {
 }
 
 const handleAssignMenus = async (row) => {
-  currentRoleId.value = row.id
+  const rowId = row.id || row.ID
+  currentRoleId.value = rowId
   await fetchMenus()
-  checkedMenuIds.value = (row.menus || []).map(m => m.id)
+  checkedMenuIds.value = (row.menus || []).map(m => m.id || m.ID)
   menuDialogVisible.value = true
 }
 
 const handleDelete = async (row) => {
+  const rowId = row.id || row.ID
   try {
     await ElMessageBox.confirm('确定要删除该角色吗？', '提示', { type: 'warning' })
-    await deleteRole(row.id)
+    await deleteRole(rowId)
     ElMessage.success('删除成功')
     fetchData()
   } catch (error) {
