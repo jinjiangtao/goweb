@@ -6,6 +6,8 @@ import UserManagement from '../views/UserManagement.vue'
 import RoleManagement from '../views/RoleManagement.vue'
 import MenuManagement from '../views/MenuManagement.vue'
 import ProductManagement from '../views/ProductManagement.vue'
+import CustomerManagement from '../views/CustomerManagement.vue'
+import SupplierManagement from '../views/SupplierManagement.vue'
 
 const routes = [
   {
@@ -47,6 +49,18 @@ const routes = [
         name: 'Products',
         component: ProductManagement,
         meta: { title: '产品管理', icon: 'Goods' }
+      },
+      {
+        path: 'customer',
+        name: 'Customers',
+        component: CustomerManagement,
+        meta: { title: '客户管理', icon: 'User' }
+      },
+      {
+        path: 'supplier',
+        name: 'Suppliers',
+        component: SupplierManagement,
+        meta: { title: '供应商管理', icon: 'OfficeBuilding' }
       }
     ]
   }

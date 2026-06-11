@@ -59,6 +59,24 @@ func SetupRoutes(r *gin.Engine) {
 				products.PUT("/:id", controllers.UpdateProduct)
 				products.DELETE("/:id", controllers.DeleteProduct)
 			}
+
+			customers := authenticated.Group("/customers")
+			{
+				customers.GET("", controllers.GetCustomers)
+				customers.GET("/:id", controllers.GetCustomer)
+				customers.POST("", controllers.CreateCustomer)
+				customers.PUT("/:id", controllers.UpdateCustomer)
+				customers.DELETE("/:id", controllers.DeleteCustomer)
+			}
+
+			suppliers := authenticated.Group("/suppliers")
+			{
+				suppliers.GET("", controllers.GetSuppliers)
+				suppliers.GET("/:id", controllers.GetSupplier)
+				suppliers.POST("", controllers.CreateSupplier)
+				suppliers.PUT("/:id", controllers.UpdateSupplier)
+				suppliers.DELETE("/:id", controllers.DeleteSupplier)
+			}
 		}
 	}
 }
