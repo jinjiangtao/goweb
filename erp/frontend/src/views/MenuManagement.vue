@@ -11,7 +11,7 @@
         </div>
       </template>
       
-      <el-table :data="tableData" row-key="id" default-expand-all style="width: 100%">
+      <el-table :data="tableData" :row-key="(row) => row.id || row.ID" default-expand-all style="width: 100%">
         <el-table-column prop="name" label="菜单名称" width="200" />
         <el-table-column prop="path" label="路由路径" width="200" />
         <el-table-column prop="icon" label="图标" width="100">
@@ -29,7 +29,7 @@
         </el-table-column>
         <el-table-column label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            {{ formatDate(row.createdAt || row.CreatedAt) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="250">
@@ -132,14 +132,17 @@ const buildMenuTree = (menus) => {
   const result = []
   
   menus.forEach(menu => {
-    menuMap[menu.id] = { ...menu, children: [] }
+    const menuId = menu.id || menu.ID
+    menuMap[menuId] = { ...menu, children: [] }
   })
   
   menus.forEach(menu => {
-    if (!menu.parentId || menu.parentId === 0) {
-      result.push(menuMap[menu.id])
-    } else if (menuMap[menu.parentId]) {
-      menuMap[menu.parentId].children.push(menuMap[menu.id])
+    const menuId = menu.id || menu.ID
+    const parentId = menu.parentId || menu.ParentId || 0
+    if (!parentId || parentId === 0) {
+      result.push(menuMap[menuId])
+    } else if (menuMap[parentId]) {
+      menuMap[parentId].children.push(menuMap[menuId])
     }
   })
   
@@ -151,9 +154,10 @@ const buildMenuOptions = (menus) => {
   
   const traverse = (list, level = 0) => {
     list.forEach(menu => {
+      const menuId = menu.id || menu.ID
       const prefix = level > 0 ? '　'.repeat(level) + '└ ' : ''
       result.push({
-        id: menu.id,
+        id: menuId,
         name: prefix + menu.name
       })
       if (menu.children && menu.children.length > 0) {
@@ -185,23 +189,25 @@ const handleAdd = () => {
 }
 
 const handleAddChild = (row) => {
+  const rowId = row.id || row.ID
   dialogTitle.value = '新增子菜单'
   isEdit.value = false
-  form.parentId = row.id
+  form.parentId = rowId
   dialogVisible.value = true
 }
 
 const handleEdit = async (row) => {
   try {
-    const res = await getMenu(row.id)
+    const rowId = row.id || row.ID
+    const res = await getMenu(rowId)
     const menu = res.data
     Object.assign(form, {
-      id: menu.id,
+      id: menu.id || menu.ID,
       name: menu.name,
       path: menu.path,
       icon: menu.icon,
       sort: menu.sort,
-      parentId: menu.parentId || 0,
+      parentId: menu.parentId || menu.ParentId || 0,
       hidden: menu.hidden || false
     })
     dialogTitle.value = '编辑菜单'
@@ -214,8 +220,9 @@ const handleEdit = async (row) => {
 
 const handleDelete = async (row) => {
   try {
+    const rowId = row.id || row.ID
     await ElMessageBox.confirm('确定要删除该菜单吗？', '提示', { type: 'warning' })
-    await deleteMenu(row.id)
+    await deleteMenu(rowId)
     ElMessage.success('删除成功')
     fetchData()
   } catch (error) {

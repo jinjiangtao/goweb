@@ -89,7 +89,7 @@
         :data="menuData"
         :props="menuProps"
         show-checkbox
-        node-key="id"
+        :node-key="(row) => row.id || row.ID"
         :default-checked-keys="checkedMenuIds"
       />
       <template #footer>

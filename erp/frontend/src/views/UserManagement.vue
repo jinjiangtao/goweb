@@ -12,13 +12,17 @@
       </template>
       
       <el-table :data="tableData" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="ID" width="80">
+          <template #default="{ row }">
+            {{ row.id || row.ID || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="用户名" width="150" />
         <el-table-column prop="email" label="邮箱" width="200" />
         <el-table-column prop="phone" label="手机号" width="150" />
         <el-table-column label="角色" width="150">
           <template #default="{ row }">
-            {{ row.role?.name || '-' }}
+            {{ row.role?.name || row.Role?.name || '-' }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
@@ -30,7 +34,7 @@
         </el-table-column>
         <el-table-column label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            {{ formatDate(row.createdAt || row.CreatedAt) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="250">
@@ -83,9 +87,9 @@
           <el-select v-model="form.roleId" placeholder="请选择角色" style="width: 100%">
             <el-option
               v-for="role in roleList"
-              :key="role.id"
+              :key="role.id || role.ID"
               :label="role.name"
-              :value="role.id"
+              :value="role.id || role.ID"
             />
           </el-select>
         </el-form-item>
@@ -173,10 +177,11 @@ const handleAdd = () => {
 
 const handleEdit = async (row) => {
   try {
-    const res = await getUser(row.id)
+    const rowId = row.id || row.ID
+    const res = await getUser(rowId)
     const user = res.data
     Object.assign(form, {
-      id: user.id,
+      id: user.id || user.ID,
       username: user.username,
       email: user.email,
       phone: user.phone,
@@ -193,12 +198,13 @@ const handleEdit = async (row) => {
 
 const handleToggleStatus = async (row) => {
   try {
+    const rowId = row.id || row.ID
     await ElMessageBox.confirm(
       `确定要${row.status === 1 ? '禁用' : '启用'}该用户吗？`,
       '提示',
       { type: 'warning' }
     )
-    await updateUser(row.id, { ...row, status: row.status === 1 ? 0 : 1 })
+    await updateUser(rowId, { ...row, status: row.status === 1 ? 0 : 1 })
     ElMessage.success('操作成功')
     fetchData()
   } catch (error) {
@@ -210,8 +216,9 @@ const handleToggleStatus = async (row) => {
 
 const handleDelete = async (row) => {
   try {
+    const rowId = row.id || row.ID
     await ElMessageBox.confirm('确定要删除该用户吗？', '提示', { type: 'warning' })
-    await deleteUser(row.id)
+    await deleteUser(rowId)
     ElMessage.success('删除成功')
     fetchData()
   } catch (error) {

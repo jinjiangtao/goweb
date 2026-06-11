@@ -42,12 +42,10 @@ func GetMenus(c *gin.Context) {
 	var menus []models.Menu
 	database.DB.Order("sort ASC").Find(&menus)
 
-	tree := buildMenuTree(menus, nil)
-
 	c.JSON(http.StatusOK, gin.H{
 		"code":    200,
 		"message": "获取成功",
-		"data":    tree,
+		"data":    menus,
 	})
 }
 
