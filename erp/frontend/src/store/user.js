@@ -23,17 +23,17 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('menus', JSON.stringify(newMenus))
   }
 
-  const login = async (loginData) => {
+  const login = async (loginData) =&gt; {
     const res = await loginApi(loginData)
-    setToken(res.token)
-    setUserInfo(res.user)
-    setMenus(res.menus || [])
+    setToken(res.data.token)
+    setUserInfo(res.data.user)
+    setMenus(res.data.menus || [])
     return res
   }
 
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = async () =&gt; {
     const res = await getCurrentUser()
-    setUserInfo(res)
+    setUserInfo(res.data)
     return res
   }
 

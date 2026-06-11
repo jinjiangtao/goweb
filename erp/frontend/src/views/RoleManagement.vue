@@ -130,19 +130,40 @@ const rules = {
   code: [{ required: true, message: '请输入角色代码', trigger: 'blur' }]
 }
 
-const fetchData = async () => {
+// 将扁平菜单转换为树形结构
+const buildMenuTree = (menus) =&gt; {
+  const menuMap = {}
+  const result = []
+  
+  menus.forEach(menu =&gt; {
+    menuMap[menu.id] = { ...menu, children: [] }
+  })
+  
+  menus.forEach(menu =&gt; {
+    if (menu.parentId === 0 || !menu.parentId) {
+      result.push(menuMap[menu.id])
+    } else if (menuMap[menu.parentId]) {
+      menuMap[menu.parentId].children.push(menuMap[menu.id])
+    }
+  })
+  
+  return result
+}
+
+const fetchData = async () =&gt; {
   try {
     const res = await getRoles()
-    tableData.value = Array.isArray(res) ? res : []
+    tableData.value = Array.isArray(res.data) ? res.data : []
   } catch (error) {
     ElMessage.error('获取角色列表失败')
   }
 }
 
-const fetchMenus = async () => {
+const fetchMenus = async () =&gt; {
   try {
     const res = await getMenus()
-    menuData.value = Array.isArray(res) ? res : []
+    const menus = Array.isArray(res.data) ? res.data : []
+    menuData.value = buildMenuTree(menus)
   } catch (error) {
     ElMessage.error('获取菜单列表失败')
   }

@@ -27,21 +27,12 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="产品名称" width="200" />
         <el-table-column prop="code" label="产品编码" width="150" />
-        <el-table-column prop="category" label="分类" width="120" />
         <el-table-column prop="price" label="价格" width="100">
           <template #default="{ row }">
             ¥{{ row.price }}
           </template>
         </el-table-column>
-        <el-table-column prop="stock" label="库存" width="80" />
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '上架' : '下架' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
+        <el-table-column prop="spec" label="规格" />
         <el-table-column prop="createdAt" label="创建时间" />
         <el-table-column label="操作" fixed="right" width="200">
           <template #default="{ row }">
@@ -69,23 +60,11 @@
         <el-form-item label="产品编码" prop="code">
           <el-input v-model="form.code" placeholder="请输入产品编码" :disabled="isEdit" />
         </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-input v-model="form.category" placeholder="请输入分类" />
-        </el-form-item>
         <el-form-item label="价格" prop="price">
           <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="库存" prop="stock">
-          <el-input-number v-model="form.stock" :min="0" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入描述" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio :label="1">上架</el-radio>
-            <el-radio :label="0">下架</el-radio>
-          </el-radio-group>
+        <el-form-item label="规格" prop="spec">
+          <el-input v-model="form.spec" placeholder="请输入规格" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -115,11 +94,8 @@ const form = reactive({
   id: null,
   name: '',
   code: '',
-  category: '',
-  description: '',
   price: 0,
-  stock: 0,
-  status: 1
+  spec: ''
 })
 
 const rules = {
@@ -131,7 +107,7 @@ const fetchData = async () => {
   try {
     const params = searchKeyword.value ? { name: searchKeyword.value } : {}
     const res = await getProducts(params)
-    tableData.value = Array.isArray(res) ? res : []
+    tableData.value = Array.isArray(res.data) ? res.data : []
   } catch (error) {
     ElMessage.error('获取产品列表失败')
   }
@@ -195,11 +171,8 @@ const resetForm = () => {
   form.id = null
   form.name = ''
   form.code = ''
-  form.category = ''
-  form.description = ''
   form.price = 0
-  form.stock = 0
-  form.status = 1
+  form.spec = ''
   if (formRef.value) {
     formRef.value.resetFields()
   }

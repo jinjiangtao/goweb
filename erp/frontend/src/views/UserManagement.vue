@@ -101,10 +101,10 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-const fetchData = async () => {
+const fetchData = async () =&gt; {
   try {
     const res = await getUsers()
-    tableData.value = Array.isArray(res) ? res : []
+    tableData.value = Array.isArray(res.data) ? res.data : []
   } catch (error) {
     ElMessage.error('获取用户列表失败')
   }

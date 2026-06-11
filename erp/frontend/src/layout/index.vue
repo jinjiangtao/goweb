@@ -14,32 +14,28 @@
         text-color="#bfcbd9"
         active-text-color="#409EFF"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><Odometer /></el-icon>
-          <template #title>仪表盘</template>
-        </el-menu-item>
-        <el-sub-menu index="system">
-          <template #title>
-            <el-icon><Setting /></el-icon>
-            <span>系统管理</span>
-          </template>
-          <el-menu-item index="/users">
-            <el-icon><User /></el-icon>
-            <template #title>用户管理</template>
+        <template v-for="menu in menuList" :key="menu.id">
+          <el-menu-item v-if="!menu.children || menu.children.length === 0" :index="menu.path">
+            <el-icon v-if="menu.icon">
+              <component :is="menu.icon" />
+            </el-icon>
+            <template #title>{{ menu.name }}</template>
           </el-menu-item>
-          <el-menu-item index="/roles">
-            <el-icon><UserFilled /></el-icon>
-            <template #title>角色管理</template>
-          </el-menu-item>
-          <el-menu-item index="/menus">
-            <el-icon><Menu /></el-icon>
-            <template #title>菜单管理</template>
-          </el-menu-item>
-        </el-sub-menu>
-        <el-menu-item index="/products">
-          <el-icon><Box /></el-icon>
-          <template #title>产品管理</template>
-        </el-menu-item>
+          <el-sub-menu v-else :index="String(menu.id)">
+            <template #title>
+              <el-icon v-if="menu.icon">
+                <component :is="menu.icon" />
+              </el-icon>
+              <span>{{ menu.name }}</span>
+            </template>
+            <el-menu-item v-for="child in menu.children" :key="child.id" :index="child.path">
+              <el-icon v-if="child.icon">
+                <component :is="child.icon" />
+              </el-icon>
+              <template #title>{{ child.name }}</template>
+            </el-menu-item>
+          </el-sub-menu>
+        </template>
       </el-menu>
     </el-aside>
     <el-container class="main-container">
@@ -81,6 +77,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,24 +85,47 @@ const userStore = useUserStore()
 
 const isCollapse = ref(false)
 
-const activeMenu = computed(() => route.path)
+const activeMenu = computed(() =&gt; route.path)
 
-const currentRoute = computed(() => {
+// 将扁平菜单转换为树形结构
+const menuList = computed(() =&gt; {
+  const menus = userStore.menus || []
+  const menuMap = {}
+  const result = []
+  
+  // 先构建映射
+  menus.forEach(menu =&gt; {
+    menuMap[menu.id] = { ...menu, children: [] }
+  })
+  
+  // 构建树形结构
+  menus.forEach(menu =&gt; {
+    if (menu.parentId === 0 || !menu.parentId) {
+      result.push(menuMap[menu.id])
+    } else if (menuMap[menu.parentId]) {
+      menuMap[menu.parentId].children.push(menuMap[menu.id])
+    }
+  })
+  
+  return result
+})
+
+const currentRoute = computed(() =&gt; {
   const routeMap = {
     '/dashboard': '仪表盘',
-    '/users': '用户管理',
-    '/roles': '角色管理',
-    '/menus': '菜单管理',
-    '/products': '产品管理'
+    '/system/user': '用户管理',
+    '/system/role': '角色管理',
+    '/system/menu': '菜单管理',
+    '/product': '产品管理'
   }
   return routeMap[route.path] || '首页'
 })
 
-const toggleCollapse = () => {
+const toggleCollapse = () =&gt; {
   isCollapse.value = !isCollapse.value
 }
 
-const handleCommand = async (command) => {
+const handleCommand = async (command) =&gt; {
   if (command === 'logout') {
     try {
       await ElMessageBox.confirm('确定要退出登录吗？', '提示', {

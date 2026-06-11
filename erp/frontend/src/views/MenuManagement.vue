@@ -130,10 +130,31 @@ const rules = {
   path: [{ required: true, message: '请输入路由路径', trigger: 'blur' }]
 }
 
-const fetchData = async () => {
+// 将扁平菜单转换为树形结构
+const buildMenuTree = (menus) =&gt; {
+  const menuMap = {}
+  const result = []
+  
+  menus.forEach(menu =&gt; {
+    menuMap[menu.id] = { ...menu, children: [] }
+  })
+  
+  menus.forEach(menu =&gt; {
+    if (menu.parentId === 0 || !menu.parentId) {
+      result.push(menuMap[menu.id])
+    } else if (menuMap[menu.parentId]) {
+      menuMap[menu.parentId].children.push(menuMap[menu.id])
+    }
+  })
+  
+  return result
+}
+
+const fetchData = async () =&gt; {
   try {
     const res = await getMenus()
-    tableData.value = Array.isArray(res) ? res : []
+    const menus = Array.isArray(res.data) ? res.data : []
+    tableData.value = buildMenuTree(menus)
   } catch (error) {
     ElMessage.error('获取菜单列表失败')
   }
