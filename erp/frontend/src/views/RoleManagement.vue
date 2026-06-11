@@ -164,7 +164,7 @@ const buildMenuTree = (menus) => {
 const fetchData = async () => {
   try {
     const res = await getRoles()
-    tableData.value = Array.isArray(res.data) ? res.data : []
+    tableData.value = res.data?.list || (Array.isArray(res.data) ? res.data : [])
   } catch (error) {
     ElMessage.error('获取角色列表失败')
   }

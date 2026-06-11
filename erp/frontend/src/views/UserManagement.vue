@@ -159,7 +159,7 @@ const fetchData = async () => {
 const fetchRoles = async () => {
   try {
     const res = await getRoles()
-    roleList.value = Array.isArray(res.data) ? res.data : []
+    roleList.value = res.data?.list || (Array.isArray(res.data) ? res.data : [])
   } catch (error) {
     console.error('获取角色列表失败', error)
   }

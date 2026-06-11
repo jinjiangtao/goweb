@@ -84,6 +84,16 @@ func seedData() {
 			DB.Exec("INSERT INTO role_menus (role_id, menu_id) VALUES (?, ?)", adminRole.ID, menu.ID)
 		}
 
+		// 创建默认产品
+		products := []models.Product{
+			{Name: "产品1", Code: "PROD001", Price: 199.99, Spec: "产品1规格"},
+			{Name: "产品2", Code: "PROD002", Price: 299.99, Spec: "产品2规格"},
+			{Name: "产品3", Code: "PROD003", Price: 399.99, Spec: "产品3规格"},
+		}
+		for _, p := range products {
+			DB.Create(&p)
+		}
+
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 		adminUser := models.User{
 			Username: "admin",

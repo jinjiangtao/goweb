@@ -138,6 +138,7 @@ const fetchData = async () => {
     const res = await getProducts(params)
     tableData.value = res.data?.list || []
     total.value = res.data?.total || 0
+    console.log('产品列表数据:', tableData.value)
   } catch (error) {
     ElMessage.error('获取产品列表失败')
   }
@@ -175,6 +176,10 @@ const handleEdit = async (row) => {
 
 const handleDelete = async (row) => {
   try {
+    if (!row || !row.id) {
+      ElMessage.error('产品ID不存在，无法删除')
+      return
+    }
     await ElMessageBox.confirm('确定要删除该产品吗？', '提示', { type: 'warning' })
     await deleteProduct(row.id)
     ElMessage.success('删除成功')
