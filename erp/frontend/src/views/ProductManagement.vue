@@ -8,32 +8,37 @@
             <el-input
               v-model="searchKeyword"
               placeholder="请输入产品名称"
-              style="width: 200px; margin-right: 10px"
               clearable
-              @keyup.enter="handleSearch"
-            />
-            <el-button type="primary" @click="handleSearch">
-              <el-icon><Search /></el-icon>
-              搜索
-            </el-button>
-            <el-button type="success" @click="handleAdd" style="margin-left: 10px">
+              style="width: 200px; margin-right: 10px"
+              @clear="handleSearch"
+            >
+              <template #append>
+                <el-button :icon="Search" @click="handleSearch" />
+              </template>
+            </el-input>
+            <el-button type="primary" @click="handleAdd">
               <el-icon><Plus /></el-icon>
               新增产品
             </el-button>
           </div>
         </div>
       </template>
+      
       <el-table :data="tableData" stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="产品名称" width="200" />
         <el-table-column prop="code" label="产品编码" width="150" />
-        <el-table-column prop="price" label="价格" width="100">
+        <el-table-column prop="price" label="价格" width="120">
           <template #default="{ row }">
-            ¥{{ row.price }}
+            ¥{{ row.price?.toFixed(2) || 0 }}
           </template>
         </el-table-column>
         <el-table-column prop="spec" label="规格" />
-        <el-table-column prop="createdAt" label="创建时间" />
+        <el-table-column label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.createdAt) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" fixed="right" width="200">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">
@@ -45,6 +50,17 @@
           </template>
         </el-table-column>
       </el-table>
+      
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        style="margin-top: 20px; justify-content: flex-end"
+      />
     </el-card>
 
     <el-dialog
@@ -53,7 +69,7 @@
       width="500px"
       @close="resetForm"
     >
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
         <el-form-item label="产品名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入产品名称" />
         </el-form-item>
@@ -64,7 +80,7 @@
           <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" />
         </el-form-item>
         <el-form-item label="规格" prop="spec">
-          <el-input v-model="form.spec" placeholder="请输入规格" />
+          <el-input v-model="form.spec" type="textarea" placeholder="请输入规格" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -80,15 +96,19 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getProducts, createProduct, updateProduct, deleteProduct } from '@/api/product'
+import { Plus, Search } from '@element-plus/icons-vue'
+import { getProducts, getProduct, createProduct, updateProduct, deleteProduct } from '../api/product'
 
 const tableData = ref([])
-const searchKeyword = ref('')
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const isEdit = ref(false)
 const loading = ref(false)
 const formRef = ref(null)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const searchKeyword = ref('')
 
 const form = reactive({
   id: null,
@@ -103,17 +123,28 @@ const rules = {
   code: [{ required: true, message: '请输入产品编码', trigger: 'blur' }]
 }
 
+const formatDate = (date) => {
+  if (!date) return '-'
+  const d = new Date(date)
+  return d.toLocaleString('zh-CN')
+}
+
 const fetchData = async () => {
   try {
-    const params = searchKeyword.value ? { name: searchKeyword.value } : {}
+    const params = { page: currentPage.value, pageSize: pageSize.value }
+    if (searchKeyword.value) {
+      params.name = searchKeyword.value
+    }
     const res = await getProducts(params)
-    tableData.value = Array.isArray(res.data) ? res.data : []
+    tableData.value = res.data?.list || []
+    total.value = res.data?.total || 0
   } catch (error) {
     ElMessage.error('获取产品列表失败')
   }
 }
 
 const handleSearch = () => {
+  currentPage.value = 1
   fetchData()
 }
 
@@ -123,11 +154,23 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row) => {
-  dialogTitle.value = '编辑产品'
-  isEdit.value = true
-  Object.assign(form, row)
-  dialogVisible.value = true
+const handleEdit = async (row) => {
+  try {
+    const res = await getProduct(row.id)
+    const product = res.data
+    Object.assign(form, {
+      id: product.id,
+      name: product.name,
+      code: product.code,
+      price: product.price,
+      spec: product.spec
+    })
+    dialogTitle.value = '编辑产品'
+    isEdit.value = true
+    dialogVisible.value = true
+  } catch (error) {
+    ElMessage.error('获取产品信息失败')
+  }
 }
 
 const handleDelete = async (row) => {
@@ -165,6 +208,16 @@ const handleSubmit = async () => {
       }
     }
   })
+}
+
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  fetchData()
+}
+
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+  fetchData()
 }
 
 const resetForm = () => {

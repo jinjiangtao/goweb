@@ -6,14 +6,11 @@ import (
 
 type Menu struct {
 	gorm.Model
-	ParentID  *uint   `json:"parentId"`
-	Name      string  `gorm:"not null" json:"name"`
-	Path      string  `json:"path"`
-	Component string  `json:"component"`
-	Icon      string  `json:"icon"`
-	Sort      int     `gorm:"default:0" json:"sort"`
-	Type      string  `gorm:"default:'menu'" json:"type"`
-	Permission string `json:"permission"`
-	Status    int     `gorm:"default:1" json:"status"`
-	Children  []Menu  `gorm:"foreignKey:ParentID" json:"children,omitempty"`
+	ParentID *uint  `json:"parentId"`
+	Name     string `gorm:"not null" json:"name"`
+	Path     string `json:"path"`
+	Icon     string `json:"icon"`
+	Sort     int    `gorm:"default:0" json:"sort"`
+	Hidden   bool   `gorm:"default:false" json:"hidden"`
+	Children []Menu `gorm:"foreignKey:ParentID" json:"children,omitempty"`
 }

@@ -1,45 +1,51 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '@/store/user'
+import Login from '../views/Login.vue'
+import Layout from '../layout/index.vue'
+import Dashboard from '../views/Dashboard.vue'
+import UserManagement from '../views/UserManagement.vue'
+import RoleManagement from '../views/RoleManagement.vue'
+import MenuManagement from '../views/MenuManagement.vue'
+import ProductManagement from '../views/ProductManagement.vue'
 
 const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () =&gt; import('@/views/Login.vue')
+    component: Login
   },
   {
     path: '/',
-    component: () =&gt; import('@/layout/index.vue'),
+    component: Layout,
     redirect: '/dashboard',
     children: [
       {
         path: 'dashboard',
         name: 'Dashboard',
-        component: () =&gt; import('@/views/Dashboard.vue'),
+        component: Dashboard,
         meta: { title: '仪表盘', icon: 'House' }
       },
       {
         path: 'system/user',
         name: 'Users',
-        component: () =&gt; import('@/views/UserManagement.vue'),
+        component: UserManagement,
         meta: { title: '用户管理', icon: 'User' }
       },
       {
         path: 'system/role',
         name: 'Roles',
-        component: () =&gt; import('@/views/RoleManagement.vue'),
+        component: RoleManagement,
         meta: { title: '角色管理', icon: 'UserFilled' }
       },
       {
         path: 'system/menu',
         name: 'Menus',
-        component: () =&gt; import('@/views/MenuManagement.vue'),
+        component: MenuManagement,
         meta: { title: '菜单管理', icon: 'Menu' }
       },
       {
         path: 'product',
         name: 'Products',
-        component: () =&gt; import('@/views/ProductManagement.vue'),
+        component: ProductManagement,
         meta: { title: '产品管理', icon: 'Goods' }
       }
     ]
@@ -51,16 +57,17 @@ const router = createRouter({
   routes
 })
 
+// 简单的路由守卫
 router.beforeEach((to, from, next) => {
-  const userStore = useUserStore()
+  const token = localStorage.getItem('token')
   if (to.path === '/login') {
-    if (userStore.token) {
+    if (token) {
       next('/')
     } else {
       next()
     }
   } else {
-    if (userStore.token) {
+    if (token) {
       next()
     } else {
       next('/login')

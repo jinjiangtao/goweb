@@ -54,18 +54,35 @@ func seedData() {
 		}
 		DB.Create(&adminRole)
 
-		menus := []models.Menu{
-			{Name: "首页", Path: "/dashboard", Icon: "home", Sort: 1, Type: "menu"},
-			{Name: "系统管理", Path: "/system", Icon: "setting", Sort: 2, Type: "menu"},
-			{Name: "用户管理", Path: "/system/user", Icon: "user", Sort: 1, Type: "menu", ParentID: &[]uint{2}[0]},
-			{Name: "角色管理", Path: "/system/role", Icon: "team", Sort: 2, Type: "menu", ParentID: &[]uint{2}[0]},
-			{Name: "菜单管理", Path: "/system/menu", Icon: "menu", Sort: 3, Type: "menu", ParentID: &[]uint{2}[0]},
-			{Name: "产品管理", Path: "/product", Icon: "shopping", Sort: 3, Type: "menu"},
-			{Name: "产品列表", Path: "/product/list", Icon: "list", Sort: 1, Type: "menu", ParentID: &[]uint{6}[0]},
-		}
-		DB.Create(&menus)
+		// 创建菜单
+		menu1 := models.Menu{Name: "首页", Path: "/dashboard", Icon: "House", Sort: 1, Hidden: false}
+		menu2 := models.Menu{Name: "系统设置", Path: "", Icon: "Setting", Sort: 2, Hidden: false}
+		menu3 := models.Menu{Name: "用户管理", Path: "/system/user", Icon: "User", Sort: 1, Hidden: false}
+		menu4 := models.Menu{Name: "角色管理", Path: "/system/role", Icon: "UserFilled", Sort: 2, Hidden: false}
+		menu5 := models.Menu{Name: "菜单管理", Path: "/system/menu", Icon: "Menu", Sort: 3, Hidden: false}
+		menu6 := models.Menu{Name: "产品管理", Path: "/product", Icon: "Goods", Sort: 3, Hidden: false}
 
-		DB.Model(&adminRole).Association("Menus").Append(menus)
+		DB.Create(&menu1)
+		DB.Create(&menu2)
+		DB.Create(&menu3)
+		DB.Create(&menu4)
+		DB.Create(&menu5)
+		DB.Create(&menu6)
+
+		// 设置父子关系
+		menu3.ParentID = &menu2.ID
+		menu4.ParentID = &menu2.ID
+		menu5.ParentID = &menu2.ID
+		DB.Save(&menu3)
+		DB.Save(&menu4)
+		DB.Save(&menu5)
+
+		menus := []models.Menu{menu1, menu2, menu3, menu4, menu5, menu6}
+
+		// 为角色分配菜单
+		for _, menu := range menus {
+			DB.Exec("INSERT INTO role_menus (role_id, menu_id) VALUES (?, ?)", adminRole.ID, menu.ID)
+		}
 
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 		adminUser := models.User{

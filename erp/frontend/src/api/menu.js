@@ -1,10 +1,9 @@
-import request from '@/utils/request'
+import request from '../utils/request.js'
 
-export const getMenus = (params) => {
+export const getMenus = () => {
   return request({
     url: '/menus',
-    method: 'get',
-    params
+    method: 'get'
   })
 }
 
@@ -40,7 +39,7 @@ export const deleteMenu = (id) => {
 
 export const getMenusByRole = () => {
   return request({
-    url: '/menus',
+    url: '/menus/role',
     method: 'get'
   })
 }

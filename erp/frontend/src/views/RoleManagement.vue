@@ -10,6 +10,7 @@
           </el-button>
         </div>
       </template>
+      
       <el-table :data="tableData" stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="角色名称" width="150" />
@@ -22,7 +23,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" />
+        <el-table-column label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.createdAt) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" fixed="right" width="300">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">
@@ -96,8 +101,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getRoles, createRole, updateRole, deleteRole, assignMenus } from '@/api/role'
-import { getMenus } from '@/api/menu'
+import { Plus } from '@element-plus/icons-vue'
+import { getRoles, getRole, createRole, updateRole, deleteRole, assignMenus } from '../api/role'
+import { getMenus } from '../api/menu'
 
 const tableData = ref([])
 const menuData = ref([])
@@ -130,17 +136,22 @@ const rules = {
   code: [{ required: true, message: '请输入角色代码', trigger: 'blur' }]
 }
 
-// 将扁平菜单转换为树形结构
-const buildMenuTree = (menus) =&gt; {
+const formatDate = (date) => {
+  if (!date) return '-'
+  const d = new Date(date)
+  return d.toLocaleString('zh-CN')
+}
+
+const buildMenuTree = (menus) => {
   const menuMap = {}
   const result = []
   
-  menus.forEach(menu =&gt; {
+  menus.forEach(menu => {
     menuMap[menu.id] = { ...menu, children: [] }
   })
   
-  menus.forEach(menu =&gt; {
-    if (menu.parentId === 0 || !menu.parentId) {
+  menus.forEach(menu => {
+    if (!menu.parentId || menu.parentId === 0) {
       result.push(menuMap[menu.id])
     } else if (menuMap[menu.parentId]) {
       menuMap[menu.parentId].children.push(menuMap[menu.id])
@@ -150,7 +161,7 @@ const buildMenuTree = (menus) =&gt; {
   return result
 }
 
-const fetchData = async () =&gt; {
+const fetchData = async () => {
   try {
     const res = await getRoles()
     tableData.value = Array.isArray(res.data) ? res.data : []
@@ -159,7 +170,7 @@ const fetchData = async () =&gt; {
   }
 }
 
-const fetchMenus = async () =&gt; {
+const fetchMenus = async () => {
   try {
     const res = await getMenus()
     const menus = Array.isArray(res.data) ? res.data : []
@@ -175,11 +186,23 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row) => {
-  dialogTitle.value = '编辑角色'
-  isEdit.value = true
-  Object.assign(form, row)
-  dialogVisible.value = true
+const handleEdit = async (row) => {
+  try {
+    const res = await getRole(row.id)
+    const role = res.data
+    Object.assign(form, {
+      id: role.id,
+      name: role.name,
+      code: role.code,
+      description: role.description,
+      status: role.status
+    })
+    dialogTitle.value = '编辑角色'
+    isEdit.value = true
+    dialogVisible.value = true
+  } catch (error) {
+    ElMessage.error('获取角色信息失败')
+  }
 }
 
 const handleAssignMenus = async (row) => {

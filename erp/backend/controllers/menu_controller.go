@@ -9,27 +9,21 @@ import (
 )
 
 type CreateMenuRequest struct {
-	ParentID   *uint  `json:"parentId"`
-	Name       string `json:"name" binding:"required"`
-	Path       string `json:"path"`
-	Component  string `json:"component"`
-	Icon       string `json:"icon"`
-	Sort       int    `json:"sort"`
-	Type       string `json:"type"`
-	Permission string `json:"permission"`
-	Status     int    `json:"status"`
+	ParentID *uint  `json:"parentId"`
+	Name     string `json:"name" binding:"required"`
+	Path     string `json:"path"`
+	Icon     string `json:"icon"`
+	Sort     int    `json:"sort"`
+	Hidden   bool   `json:"hidden"`
 }
 
 type UpdateMenuRequest struct {
-	ParentID   *uint  `json:"parentId"`
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	Component  string `json:"component"`
-	Icon       string `json:"icon"`
-	Sort       int    `json:"sort"`
-	Type       string `json:"type"`
-	Permission string `json:"permission"`
-	Status     int    `json:"status"`
+	ParentID *uint  `json:"parentId"`
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	Icon     string `json:"icon"`
+	Sort     int    `json:"sort"`
+	Hidden   bool   `json:"hidden"`
 }
 
 func buildMenuTree(menus []models.Menu, parentID *uint) []models.Menu {
@@ -81,22 +75,12 @@ func CreateMenu(c *gin.Context) {
 	}
 
 	menu := models.Menu{
-		ParentID:   req.ParentID,
-		Name:       req.Name,
-		Path:       req.Path,
-		Component:  req.Component,
-		Icon:       req.Icon,
-		Sort:       req.Sort,
-		Type:       req.Type,
-		Permission: req.Permission,
-		Status:     req.Status,
-	}
-
-	if menu.Status == 0 {
-		menu.Status = 1
-	}
-	if menu.Type == "" {
-		menu.Type = "menu"
+		ParentID: req.ParentID,
+		Name:     req.Name,
+		Path:     req.Path,
+		Icon:     req.Icon,
+		Sort:     req.Sort,
+		Hidden:   req.Hidden,
 	}
 
 	if err := database.DB.Create(&menu).Error; err != nil {
@@ -135,24 +119,13 @@ func UpdateMenu(c *gin.Context) {
 	if req.Path != "" {
 		menu.Path = req.Path
 	}
-	if req.Component != "" {
-		menu.Component = req.Component
-	}
 	if req.Icon != "" {
 		menu.Icon = req.Icon
 	}
 	if req.Sort != 0 {
 		menu.Sort = req.Sort
 	}
-	if req.Type != "" {
-		menu.Type = req.Type
-	}
-	if req.Permission != "" {
-		menu.Permission = req.Permission
-	}
-	if req.Status != 0 {
-		menu.Status = req.Status
-	}
+	menu.Hidden = req.Hidden
 
 	if err := database.DB.Save(&menu).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "更新失败"})

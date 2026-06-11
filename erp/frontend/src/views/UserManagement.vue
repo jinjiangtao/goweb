@@ -10,11 +10,17 @@
           </el-button>
         </div>
       </template>
+      
       <el-table :data="tableData" stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="username" label="用户名" width="150" />
         <el-table-column prop="email" label="邮箱" width="200" />
         <el-table-column prop="phone" label="手机号" width="150" />
+        <el-table-column label="角色" width="150">
+          <template #default="{ row }">
+            {{ row.role?.name || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
@@ -22,7 +28,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" />
+        <el-table-column label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.createdAt) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" fixed="right" width="250">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">
@@ -37,6 +47,17 @@
           </template>
         </el-table-column>
       </el-table>
+      
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        style="margin-top: 20px; justify-content: flex-end"
+      />
     </el-card>
 
     <el-dialog
@@ -50,13 +71,23 @@
           <el-input v-model="form.username" placeholder="请输入用户名" :disabled="isEdit" />
         </el-form-item>
         <el-form-item label="密码" prop="password" v-if="!isEdit">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" />
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="form.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="角色" prop="roleId">
+          <el-select v-model="form.roleId" placeholder="请选择角色" style="width: 100%">
+            <el-option
+              v-for="role in roleList"
+              :key="role.id"
+              :label="role.name"
+              :value="role.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -78,14 +109,20 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUsers, createUser, updateUser, deleteUser } from '@/api/user'
+import { Plus } from '@element-plus/icons-vue'
+import { getUsers, getUser, createUser, updateUser, deleteUser } from '../api/user'
+import { getRoles } from '../api/role'
 
 const tableData = ref([])
+const roleList = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const isEdit = ref(false)
 const loading = ref(false)
 const formRef = ref(null)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const form = reactive({
   id: null,
@@ -93,20 +130,38 @@ const form = reactive({
   password: '',
   email: '',
   phone: '',
+  roleId: null,
   status: 1
 })
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  roleId: [{ required: true, message: '请选择角色', trigger: 'change' }]
 }
 
-const fetchData = async () =&gt; {
+const formatDate = (date) => {
+  if (!date) return '-'
+  const d = new Date(date)
+  return d.toLocaleString('zh-CN')
+}
+
+const fetchData = async () => {
   try {
-    const res = await getUsers()
-    tableData.value = Array.isArray(res.data) ? res.data : []
+    const res = await getUsers({ page: currentPage.value, pageSize: pageSize.value })
+    tableData.value = res.data?.list || []
+    total.value = res.data?.total || 0
   } catch (error) {
     ElMessage.error('获取用户列表失败')
+  }
+}
+
+const fetchRoles = async () => {
+  try {
+    const res = await getRoles()
+    roleList.value = Array.isArray(res.data) ? res.data : []
+  } catch (error) {
+    console.error('获取角色列表失败', error)
   }
 }
 
@@ -116,11 +171,24 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row) => {
-  dialogTitle.value = '编辑用户'
-  isEdit.value = true
-  Object.assign(form, row)
-  dialogVisible.value = true
+const handleEdit = async (row) => {
+  try {
+    const res = await getUser(row.id)
+    const user = res.data
+    Object.assign(form, {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+      roleId: user.roleId,
+      status: user.status
+    })
+    dialogTitle.value = '编辑用户'
+    isEdit.value = true
+    dialogVisible.value = true
+  } catch (error) {
+    ElMessage.error('获取用户信息失败')
+  }
 }
 
 const handleToggleStatus = async (row) => {
@@ -177,12 +245,23 @@ const handleSubmit = async () => {
   })
 }
 
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  fetchData()
+}
+
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+  fetchData()
+}
+
 const resetForm = () => {
   form.id = null
   form.username = ''
   form.password = ''
   form.email = ''
   form.phone = ''
+  form.roleId = null
   form.status = 1
   if (formRef.value) {
     formRef.value.resetFields()
@@ -191,6 +270,7 @@ const resetForm = () => {
 
 onMounted(() => {
   fetchData()
+  fetchRoles()
 })
 </script>
 

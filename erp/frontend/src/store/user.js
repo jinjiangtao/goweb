@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { login as loginApi, getCurrentUser } from '@/api/auth'
-import { getMenusByRole } from '@/api/menu'
+import { login as loginApi } from '../api/auth.js'
+import { getMenusByRole } from '../api/menu.js'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -23,7 +23,7 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('menus', JSON.stringify(newMenus))
   }
 
-  const login = async (loginData) =&gt; {
+  const login = async (loginData) => {
     const res = await loginApi(loginData)
     setToken(res.data.token)
     setUserInfo(res.data.user)
@@ -31,10 +31,9 @@ export const useUserStore = defineStore('user', () => {
     return res
   }
 
-  const fetchUserInfo = async () =&gt; {
-    const res = await getCurrentUser()
-    setUserInfo(res.data)
-    return res
+  const fetchUserInfo = async () => {
+    // 暂时不需要实现
+    return
   }
 
   const logout = () => {

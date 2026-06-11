@@ -10,7 +10,6 @@
           <el-input
             v-model="loginForm.username"
             placeholder="请输入用户名"
-            prefix-icon="User"
             size="large"
           />
         </el-form-item>
@@ -19,7 +18,6 @@
             v-model="loginForm.password"
             type="password"
             placeholder="请输入密码"
-            prefix-icon="Lock"
             size="large"
             show-password
             @keyup.enter="handleLogin"
@@ -45,7 +43,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/store/user'
+import { useUserStore } from '../store/user.js'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -85,7 +83,7 @@ const handleLogin = async () => {
 <style scoped>
 .login-container {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   justify-content: center;

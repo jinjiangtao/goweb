@@ -23,13 +23,13 @@ type RegisterRequest struct {
 
 func Login(c *gin.Context) {
 	var req LoginRequest
-	if err := c.ShouldBindJSON(&amp;req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数错误"})
 		return
 	}
 
 	var user models.User
-	if err := database.DB.Where("username = ?", req.Username).Preload("Role").First(&amp;user).Error; err != nil {
+	if err := database.DB.Where("username = ?", req.Username).Preload("Role").First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户名或密码错误"})
 		return
 	}
@@ -52,12 +52,12 @@ func Login(c *gin.Context) {
 
 	// 获取用户的菜单
 	var menus []models.Menu
-	if user.RoleID != nil {
+	if user.RoleID != 0 {
 		database.DB.Table("menus").
 			Joins("JOIN role_menus ON role_menus.menu_id = menus.id").
-			Where("role_menus.role_id = ? AND menus.hidden = ?", *user.RoleID, false).
+			Where("role_menus.role_id = ? AND menus.hidden = ?", user.RoleID, false).
 			Order("menus.sort ASC").
-			Find(&amp;menus)
+			Find(&menus)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

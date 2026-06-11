@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '../utils/request.js'
 
 export const login = (data) => {
   return request({
@@ -8,17 +8,9 @@ export const login = (data) => {
   })
 }
 
-export const register = (data) => {
-  return request({
-    url: '/auth/register',
-    method: 'post',
-    data
-  })
-}
-
 export const getCurrentUser = () => {
   return request({
-    url: '/auth/user',
+    url: '/auth/current',
     method: 'get'
   })
 }

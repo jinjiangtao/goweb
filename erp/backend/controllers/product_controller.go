@@ -10,42 +10,31 @@ import (
 )
 
 type CreateProductRequest struct {
-	Name        string  `json:"name" binding:"required"`
-	Code        string  `json:"code" binding:"required"`
-	Category    string  `json:"category"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	Stock       int     `json:"stock"`
-	Status      int     `json:"status"`
+	Name  string  `json:"name" binding:"required"`
+	Code  string  `json:"code" binding:"required"`
+	Price float64 `json:"price"`
+	Spec  string  `json:"spec"`
 }
 
 type UpdateProductRequest struct {
-	Name        string  `json:"name"`
-	Code        string  `json:"code"`
-	Category    string  `json:"category"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	Stock       int     `json:"stock"`
-	Status      int     `json:"status"`
+	Name  string  `json:"name"`
+	Code  string  `json:"code"`
+	Price float64 `json:"price"`
+	Spec  string  `json:"spec"`
 }
 
 func GetProducts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	keyword := c.Query("keyword")
-	category := c.Query("category")
+	name := c.Query("name")
 
 	var products []models.Product
 	var total int64
 
 	query := database.DB.Model(&models.Product{})
 
-	if keyword != "" {
-		query = query.Where("name LIKE ? OR code LIKE ? OR description LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
-	}
-
-	if category != "" {
-		query = query.Where("category = ?", category)
+	if name != "" {
+		query = query.Where("name LIKE ?", "%"+name+"%")
 	}
 
 	query.Count(&total)
@@ -93,17 +82,10 @@ func CreateProduct(c *gin.Context) {
 	}
 
 	product := models.Product{
-		Name:        req.Name,
-		Code:        req.Code,
-		Category:    req.Category,
-		Description: req.Description,
-		Price:       req.Price,
-		Stock:       req.Stock,
-		Status:      req.Status,
-	}
-
-	if product.Status == 0 {
-		product.Status = 1
+		Name:  req.Name,
+		Code:  req.Code,
+		Price: req.Price,
+		Spec:  req.Spec,
 	}
 
 	if err := database.DB.Create(&product).Error; err != nil {
@@ -139,20 +121,11 @@ func UpdateProduct(c *gin.Context) {
 	if req.Code != "" {
 		product.Code = req.Code
 	}
-	if req.Category != "" {
-		product.Category = req.Category
-	}
-	if req.Description != "" {
-		product.Description = req.Description
-	}
 	if req.Price != 0 {
 		product.Price = req.Price
 	}
-	if req.Stock != 0 {
-		product.Stock = req.Stock
-	}
-	if req.Status != 0 {
-		product.Status = req.Status
+	if req.Spec != "" {
+		product.Spec = req.Spec
 	}
 
 	if err := database.DB.Save(&product).Error; err != nil {
