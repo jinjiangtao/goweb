@@ -81,7 +81,6 @@ const handleLogin = async () => {
 }
 
 onMounted(() => {
-  // 组件加载时清理所有可能过期的数据
   userStore.logout()
 })
 </script>

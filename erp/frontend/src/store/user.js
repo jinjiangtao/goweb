@@ -18,14 +18,12 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const setMenus = (newMenus) => {
-    console.log('设置菜单数据:', newMenus) // 调试日志
     menus.value = newMenus || []
     localStorage.setItem('menus', JSON.stringify(newMenus || []))
   }
 
   const login = async (loginData) => {
     const res = await loginApi(loginData)
-    console.log('登录完整响应:', res) // 调试日志
     setToken(res.data.token)
     setUserInfo(res.data.user)
     setMenus(res.data.menus)
@@ -33,7 +31,6 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const fetchUserInfo = async () => {
-    // 暂时不需要实现
     return
   }
 

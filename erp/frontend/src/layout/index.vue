@@ -1,23 +1,42 @@
 <template>
   <div class="layout">
     <div class="header">
-      <h2>ERP管理系统</h2>
-      <button @click="handleLogout">退出登录</button>
+      <div class="header-left">
+        <h2>ERP管理系统</h2>
+      </div>
+      <div class="header-right">
+        <el-button type="danger" @click="handleLogout">退出登录</el-button>
+      </div>
     </div>
     <div class="main-content">
       <div class="sidebar">
-        <ul>
-          <template v-for="menu in menuTree" :key="menu.id || menu.ID">
-            <li v-if="menu && !menu.hidden">
-              <router-link :to="menu.path">{{ menu.name }}</router-link>
-              <ul v-if="menu.children && menu.children.length > 0" class="submenu">
-                <li v-for="child in menu.children" :key="child.id || child.ID" v-if="child && !child.hidden">
-                  <router-link :to="child.path">{{ child.name }}</router-link>
-                </li>
-              </ul>
-            </li>
+        <el-menu
+          :default-active="activeMenu"
+          class="sidebar-menu"
+          router
+          unique-opened
+          :collapse="false"
+        >
+          <template v-for="menu in menuList" :key="menu.path">
+            <el-menu-item v-if="!menu.children || menu.children.length === 0" :index="menu.path">
+              <el-icon><component :is="getMenuIcon(menu.icon)" /></el-icon>
+              <span>{{ menu.name }}</span>
+            </el-menu-item>
+            <el-sub-menu v-else :index="menu.path">
+              <template #title>
+                <el-icon><component :is="getMenuIcon(menu.icon)" /></el-icon>
+                <span>{{ menu.name }}</span>
+              </template>
+              <el-menu-item
+                v-for="child in menu.children"
+                :key="child.path"
+                :index="child.path"
+              >
+                <span>{{ child.name }}</span>
+              </el-menu-item>
+            </el-sub-menu>
           </template>
-        </ul>
+        </el-menu>
       </div>
       <div class="content">
         <router-view />
@@ -27,50 +46,86 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../store/user.js'
+import * as ElementPlusIcons from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
-// 构建菜单树
-const buildMenuTree = (menus) => {
-  if (!menus || !Array.isArray(menus)) {
-    return []
-  }
-  
-  const menuMap = {}
-  const result = []
-  
-  // 先初始化所有菜单
-  menus.forEach(menu => {
-    if (!menu) return
-    const menuId = menu.id || menu.ID
-    if (menuId) {
-      menuMap[menuId] = { ...menu, children: [] }
-    }
-  })
-  
-  // 然后构建树结构
-  menus.forEach(menu => {
-    if (!menu) return
-    const menuId = menu.id || menu.ID
-    const parentId = menu.parentId || menu.ParentId || 0
-    
-    if (!menuId || !menuMap[menuId]) return
-    
-    if (!parentId || parentId === 0) {
-      result.push(menuMap[menuId])
-    } else if (menuMap[parentId]) {
-      menuMap[parentId].children.push(menuMap[menuId])
-    }
-  })
-  
-  return result
+const activeMenu = computed(() => route.path)
+
+const iconMap = {
+  House: ElementPlusIcons.House,
+  Setting: ElementPlusIcons.Setting,
+  User: ElementPlusIcons.User,
+  UserFilled: ElementPlusIcons.UserFilled,
+  Menu: ElementPlusIcons.Menu,
+  Goods: ElementPlusIcons.Goods,
+  OfficeBuilding: ElementPlusIcons.OfficeBuilding,
+  ShoppingCart: ElementPlusIcons.ShoppingCart,
+  Sell: ElementPlusIcons.Sell
 }
 
-const menuTree = computed(() => buildMenuTree(userStore.menus || []))
+const getMenuIcon = (iconName) => {
+  return iconMap[iconName] || ElementPlusIcons.Menu
+}
+
+const menuList = computed(() => {
+  return [
+    {
+      name: '首页',
+      path: '/dashboard',
+      icon: 'House'
+    },
+    {
+      name: '系统设置',
+      path: '/system',
+      icon: 'Setting',
+      children: [
+        {
+          name: '用户管理',
+          path: '/system/user'
+        },
+        {
+          name: '角色管理',
+          path: '/system/role'
+        },
+        {
+          name: '菜单管理',
+          path: '/system/menu'
+        }
+      ]
+    },
+    {
+      name: '产品管理',
+      path: '/product',
+      icon: 'Goods'
+    },
+    {
+      name: '客户管理',
+      path: '/customer',
+      icon: 'User'
+    },
+    {
+      name: '供应商管理',
+      path: '/supplier',
+      icon: 'OfficeBuilding'
+    },
+    {
+      name: '采购订单',
+      path: '/purchase-order',
+      icon: 'ShoppingCart'
+    },
+    {
+      name: '销售订单',
+      path: '/sales-order',
+      icon: 'Sell'
+    }
+  ]
+})
 
 const handleLogout = () => {
   userStore.logout()
@@ -83,60 +138,70 @@ const handleLogout = () => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: 100%;
+  overflow: hidden;
 }
 
 .header {
-  background: #304156;
-  color: white;
-  padding: 0 20px;
-  height: 60px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  padding: 0 24px;
+  background: #001529;
+  color: white;
+}
+
+.header-left h2 {
+  margin: 0;
+  font-size: 20px;
+  color: white;
 }
 
 .main-content {
   display: flex;
   flex: 1;
+  overflow: hidden;
 }
 
 .sidebar {
-  width: 200px;
-  background: #304156;
-  padding: 20px 0;
+  width: 220px;
+  background: #001529;
+  flex-shrink: 0;
+  overflow-y: auto;
 }
 
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.sidebar-menu {
+  height: 100%;
+  border: none;
+  background: #001529;
 }
 
-.sidebar li {
-  margin: 10px 0;
+.sidebar-menu:not(.el-menu--collapse) {
+  width: 220px;
 }
 
-.sidebar a {
-  display: block;
-  padding: 10px 20px;
+.sidebar-menu .el-menu-item,
+.sidebar-menu .el-sub-menu__title {
   color: #bfcbd9;
-  text-decoration: none;
 }
 
-.sidebar a:hover,
-.sidebar a.router-link-active {
-  background: #263445;
-  color: #409EFF;
+.sidebar-menu .el-menu-item:hover,
+.sidebar-menu .el-sub-menu__title:hover {
+  color: #409EFF !important;
+  background: #263445 !important;
 }
 
-.sidebar .submenu {
-  margin-left: 10px;
-  font-size: 14px;
+.sidebar-menu .el-menu-item.is-active {
+  color: #409EFF !important;
+  background: #263445 !important;
 }
 
 .content {
   flex: 1;
-  padding: 20px;
+  padding: 24px;
   background: #f0f2f5;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>
