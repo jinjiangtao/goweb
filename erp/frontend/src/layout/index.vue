@@ -8,10 +8,10 @@
       <div class="sidebar">
         <ul>
           <template v-for="menu in menuTree" :key="menu.id || menu.ID">
-            <li v-if="!menu.hidden">
+            <li v-if="menu && !menu.hidden">
               <router-link :to="menu.path">{{ menu.name }}</router-link>
               <ul v-if="menu.children && menu.children.length > 0" class="submenu">
-                <li v-for="child in menu.children" :key="child.id || child.ID" v-if="!child.hidden">
+                <li v-for="child in menu.children" :key="child.id || child.ID" v-if="child && !child.hidden">
                   <router-link :to="child.path">{{ child.name }}</router-link>
                 </li>
               </ul>
@@ -36,17 +36,30 @@ const userStore = useUserStore()
 
 // 构建菜单树
 const buildMenuTree = (menus) => {
+  if (!menus || !Array.isArray(menus)) {
+    return []
+  }
+  
   const menuMap = {}
   const result = []
   
+  // 先初始化所有菜单
   menus.forEach(menu => {
+    if (!menu) return
     const menuId = menu.id || menu.ID
-    menuMap[menuId] = { ...menu, children: [] }
+    if (menuId) {
+      menuMap[menuId] = { ...menu, children: [] }
+    }
   })
   
+  // 然后构建树结构
   menus.forEach(menu => {
+    if (!menu) return
     const menuId = menu.id || menu.ID
     const parentId = menu.parentId || menu.ParentId || 0
+    
+    if (!menuId || !menuMap[menuId]) return
+    
     if (!parentId || parentId === 0) {
       result.push(menuMap[menuId])
     } else if (menuMap[parentId]) {

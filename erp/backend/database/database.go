@@ -52,7 +52,8 @@ func InitDB() {
 func seedData() {
 	// 获取或创建超级管理员角色
 	var adminRole models.Role
-	DB.Where("code = ?", "admin").FirstOrCreate(&adminRole, models.Role{
+	adminCode := "admin"
+	DB.Where("code = ?", adminCode).FirstOrCreate(&adminRole, models.Role{
 		Name:        "超级管理员",
 		Code:        "admin",
 		Description: "拥有系统所有权限",
@@ -84,7 +85,8 @@ func seedData() {
 
 	// 设置父子关系：系统设置是父菜单
 	var systemMenu, userMenu, roleMenu, menuMenu models.Menu
-	DB.Where("path = ?", "").First(&systemMenu)
+	systemPath := ""
+	DB.Where("path = ?", systemPath).First(&systemMenu)
 	DB.Where("path = ?", "/system/user").First(&userMenu)
 	DB.Where("path = ?", "/system/role").First(&roleMenu)
 	DB.Where("path = ?", "/system/menu").First(&menuMenu)
@@ -120,7 +122,8 @@ func seedData() {
 
 	// 创建默认管理员用户（如果不存在）
 	var userCount int64
-	DB.Model(&models.User{}).Where("username = ?", "admin").Count(&userCount)
+	adminUsername := "admin"
+	DB.Model(&models.User{}).Where("username = ?", adminUsername).Count(&userCount)
 	if userCount == 0 {
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 		adminUser := models.User{

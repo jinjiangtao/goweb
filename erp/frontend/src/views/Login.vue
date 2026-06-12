@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../store/user.js'
@@ -71,6 +71,7 @@ const handleLogin = async () => {
         ElMessage.success('登录成功')
         router.push('/')
       } catch (error) {
+        console.error('登录错误:', error)
         ElMessage.error(error.response?.data?.message || '登录失败')
       } finally {
         loading.value = false
@@ -78,6 +79,11 @@ const handleLogin = async () => {
     }
   })
 }
+
+onMounted(() => {
+  // 组件加载时清理所有可能过期的数据
+  userStore.logout()
+})
 </script>
 
 <style scoped>
