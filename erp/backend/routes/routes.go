@@ -70,13 +70,33 @@ func SetupRoutes(r *gin.Engine) {
 			}
 
 			suppliers := authenticated.Group("/suppliers")
-			{
-				suppliers.GET("", controllers.GetSuppliers)
-				suppliers.GET("/:id", controllers.GetSupplier)
-				suppliers.POST("", controllers.CreateSupplier)
-				suppliers.PUT("/:id", controllers.UpdateSupplier)
-				suppliers.DELETE("/:id", controllers.DeleteSupplier)
-			}
+		{
+			suppliers.GET("", controllers.GetSuppliers)
+			suppliers.GET("/:id", controllers.GetSupplier)
+			suppliers.POST("", controllers.CreateSupplier)
+			suppliers.PUT("/:id", controllers.UpdateSupplier)
+			suppliers.DELETE("/:id", controllers.DeleteSupplier)
+		}
+
+		purchaseOrders := authenticated.Group("/purchase-orders")
+		{
+			purchaseOrders.GET("", controllers.GetPurchaseOrders)
+			purchaseOrders.GET("/:id", controllers.GetPurchaseOrder)
+			purchaseOrders.POST("", controllers.CreatePurchaseOrder)
+			purchaseOrders.PUT("/:id", controllers.UpdatePurchaseOrder)
+			purchaseOrders.PUT("/:id/status", controllers.UpdatePurchaseOrderStatus)
+			purchaseOrders.DELETE("/:id", controllers.DeletePurchaseOrder)
+		}
+
+		salesOrders := authenticated.Group("/sales-orders")
+		{
+			salesOrders.GET("", controllers.GetSalesOrders)
+			salesOrders.GET("/:id", controllers.GetSalesOrder)
+			salesOrders.POST("", controllers.CreateSalesOrder)
+			salesOrders.PUT("/:id", controllers.UpdateSalesOrder)
+			salesOrders.PUT("/:id/status", controllers.UpdateSalesOrderStatus)
+			salesOrders.DELETE("/:id", controllers.DeleteSalesOrder)
 		}
 	}
+}
 }

@@ -35,6 +35,10 @@ func InitDB() {
 		&models.Product{},
 		&models.Customer{},
 		&models.Supplier{},
+		&models.PurchaseOrder{},
+		&models.PurchaseOrderItem{},
+		&models.SalesOrder{},
+		&models.SalesOrderItem{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
@@ -65,6 +69,8 @@ func seedData() {
 		menu6 := models.Menu{Name: "产品管理", Path: "/product", Icon: "Goods", Sort: 3, Hidden: false}
 		menu7 := models.Menu{Name: "客户管理", Path: "/customer", Icon: "User", Sort: 4, Hidden: false}
 		menu8 := models.Menu{Name: "供应商管理", Path: "/supplier", Icon: "OfficeBuilding", Sort: 5, Hidden: false}
+		menu9 := models.Menu{Name: "采购订单", Path: "/purchase-order", Icon: "ShoppingCart", Sort: 6, Hidden: false}
+		menu10 := models.Menu{Name: "销售订单", Path: "/sales-order", Icon: "Sell", Sort: 7, Hidden: false}
 
 		DB.Create(&menu1)
 		DB.Create(&menu2)
@@ -74,6 +80,8 @@ func seedData() {
 		DB.Create(&menu6)
 		DB.Create(&menu7)
 		DB.Create(&menu8)
+		DB.Create(&menu9)
+		DB.Create(&menu10)
 
 		// 设置父子关系
 		menu3.ParentID = &menu2.ID
@@ -83,7 +91,7 @@ func seedData() {
 		DB.Save(&menu4)
 		DB.Save(&menu5)
 
-		menus := []models.Menu{menu1, menu2, menu3, menu4, menu5, menu6, menu7, menu8}
+		menus := []models.Menu{menu1, menu2, menu3, menu4, menu5, menu6, menu7, menu8, menu9, menu10}
 
 		// 为角色分配菜单
 		for _, menu := range menus {

@@ -8,6 +8,8 @@ import MenuManagement from '../views/MenuManagement.vue'
 import ProductManagement from '../views/ProductManagement.vue'
 import CustomerManagement from '../views/CustomerManagement.vue'
 import SupplierManagement from '../views/SupplierManagement.vue'
+import PurchaseOrderManagement from '../views/PurchaseOrderManagement.vue'
+import SalesOrderManagement from '../views/SalesOrderManagement.vue'
 
 const routes = [
   {
@@ -61,6 +63,18 @@ const routes = [
         name: 'Suppliers',
         component: SupplierManagement,
         meta: { title: '供应商管理', icon: 'OfficeBuilding' }
+      },
+      {
+        path: 'purchase-order',
+        name: 'PurchaseOrders',
+        component: PurchaseOrderManagement,
+        meta: { title: '采购订单', icon: 'ShoppingCart' }
+      },
+      {
+        path: 'sales-order',
+        name: 'SalesOrders',
+        component: SalesOrderManagement,
+        meta: { title: '销售订单', icon: 'Sell' }
       }
     ]
   }

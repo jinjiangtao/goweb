@@ -7,11 +7,16 @@
     <div class="main-content">
       <div class="sidebar">
         <ul>
-          <li><router-link to="/dashboard">仪表板</router-link></li>
-          <li><router-link to="/system/user">用户管理</router-link></li>
-          <li><router-link to="/system/role">角色管理</router-link></li>
-          <li><router-link to="/system/menu">菜单管理</router-link></li>
-          <li><router-link to="/product">产品管理</router-link></li>
+          <template v-for="menu in menuTree" :key="menu.id || menu.ID">
+            <li v-if="!menu.hidden">
+              <router-link :to="menu.path">{{ menu.name }}</router-link>
+              <ul v-if="menu.children && menu.children.length > 0" class="submenu">
+                <li v-for="child in menu.children" :key="child.id || child.ID" v-if="!child.hidden">
+                  <router-link :to="child.path">{{ child.name }}</router-link>
+                </li>
+              </ul>
+            </li>
+          </template>
         </ul>
       </div>
       <div class="content">
@@ -22,11 +27,37 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user.js'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+// 构建菜单树
+const buildMenuTree = (menus) => {
+  const menuMap = {}
+  const result = []
+  
+  menus.forEach(menu => {
+    const menuId = menu.id || menu.ID
+    menuMap[menuId] = { ...menu, children: [] }
+  })
+  
+  menus.forEach(menu => {
+    const menuId = menu.id || menu.ID
+    const parentId = menu.parentId || menu.ParentId || 0
+    if (!parentId || parentId === 0) {
+      result.push(menuMap[menuId])
+    } else if (menuMap[parentId]) {
+      menuMap[parentId].children.push(menuMap[menuId])
+    }
+  })
+  
+  return result
+}
+
+const menuTree = computed(() => buildMenuTree(userStore.menus || []))
 
 const handleLogout = () => {
   userStore.logout()
@@ -65,6 +96,7 @@ const handleLogout = () => {
 .sidebar ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .sidebar li {
@@ -82,6 +114,11 @@ const handleLogout = () => {
 .sidebar a.router-link-active {
   background: #263445;
   color: #409EFF;
+}
+
+.sidebar .submenu {
+  margin-left: 10px;
+  font-size: 14px;
 }
 
 .content {
