@@ -50,64 +50,78 @@ func InitDB() {
 }
 
 func seedData() {
-	var roleCount int64
-	DB.Model(&models.Role{}).Count(&roleCount)
-	if roleCount == 0 {
-		adminRole := models.Role{
-			Name:        "超级管理员",
-			Code:        "admin",
-			Description: "拥有系统所有权限",
+	// 获取或创建超级管理员角色
+	var adminRole models.Role
+	DB.Where("code = ?", "admin").FirstOrCreate(&adminRole, models.Role{
+		Name:        "超级管理员",
+		Code:        "admin",
+		Description: "拥有系统所有权限",
+	})
+
+	// 定义所有需要的菜单
+	menuDefinitions := []models.Menu{
+		{Name: "首页", Path: "/dashboard", Icon: "House", Sort: 1, Hidden: false},
+		{Name: "系统设置", Path: "", Icon: "Setting", Sort: 2, Hidden: false},
+		{Name: "用户管理", Path: "/system/user", Icon: "User", Sort: 1, Hidden: false},
+		{Name: "角色管理", Path: "/system/role", Icon: "UserFilled", Sort: 2, Hidden: false},
+		{Name: "菜单管理", Path: "/system/menu", Icon: "Menu", Sort: 3, Hidden: false},
+		{Name: "产品管理", Path: "/product", Icon: "Goods", Sort: 3, Hidden: false},
+		{Name: "客户管理", Path: "/customer", Icon: "User", Sort: 4, Hidden: false},
+		{Name: "供应商管理", Path: "/supplier", Icon: "OfficeBuilding", Sort: 5, Hidden: false},
+		{Name: "采购订单", Path: "/purchase-order", Icon: "ShoppingCart", Sort: 6, Hidden: false},
+		{Name: "销售订单", Path: "/sales-order", Icon: "Sell", Sort: 7, Hidden: false},
+	}
+
+	var createdMenus []models.Menu
+	for _, menuDef := range menuDefinitions {
+		var existingMenu models.Menu
+		// 使用Path作为唯一标识来查找或创建菜单
+		result := DB.Where("path = ?", menuDef.Path).FirstOrCreate(&existingMenu, menuDef)
+		if result.Error == nil {
+			createdMenus = append(createdMenus, existingMenu)
 		}
-		DB.Create(&adminRole)
+	}
 
-		// 创建菜单
-		menu1 := models.Menu{Name: "首页", Path: "/dashboard", Icon: "House", Sort: 1, Hidden: false}
-		menu2 := models.Menu{Name: "系统设置", Path: "", Icon: "Setting", Sort: 2, Hidden: false}
-		menu3 := models.Menu{Name: "用户管理", Path: "/system/user", Icon: "User", Sort: 1, Hidden: false}
-		menu4 := models.Menu{Name: "角色管理", Path: "/system/role", Icon: "UserFilled", Sort: 2, Hidden: false}
-		menu5 := models.Menu{Name: "菜单管理", Path: "/system/menu", Icon: "Menu", Sort: 3, Hidden: false}
-		menu6 := models.Menu{Name: "产品管理", Path: "/product", Icon: "Goods", Sort: 3, Hidden: false}
-		menu7 := models.Menu{Name: "客户管理", Path: "/customer", Icon: "User", Sort: 4, Hidden: false}
-		menu8 := models.Menu{Name: "供应商管理", Path: "/supplier", Icon: "OfficeBuilding", Sort: 5, Hidden: false}
-		menu9 := models.Menu{Name: "采购订单", Path: "/purchase-order", Icon: "ShoppingCart", Sort: 6, Hidden: false}
-		menu10 := models.Menu{Name: "销售订单", Path: "/sales-order", Icon: "Sell", Sort: 7, Hidden: false}
+	// 设置父子关系：系统设置是父菜单
+	var systemMenu, userMenu, roleMenu, menuMenu models.Menu
+	DB.Where("path = ?", "").First(&systemMenu)
+	DB.Where("path = ?", "/system/user").First(&userMenu)
+	DB.Where("path = ?", "/system/role").First(&roleMenu)
+	DB.Where("path = ?", "/system/menu").First(&menuMenu)
 
-		DB.Create(&menu1)
-		DB.Create(&menu2)
-		DB.Create(&menu3)
-		DB.Create(&menu4)
-		DB.Create(&menu5)
-		DB.Create(&menu6)
-		DB.Create(&menu7)
-		DB.Create(&menu8)
-		DB.Create(&menu9)
-		DB.Create(&menu10)
+	if systemMenu.ID > 0 {
+		userMenu.ParentID = &systemMenu.ID
+		roleMenu.ParentID = &systemMenu.ID
+		menuMenu.ParentID = &systemMenu.ID
+		DB.Save(&userMenu)
+		DB.Save(&roleMenu)
+		DB.Save(&menuMenu)
+	}
 
-		// 设置父子关系
-		menu3.ParentID = &menu2.ID
-		menu4.ParentID = &menu2.ID
-		menu5.ParentID = &menu2.ID
-		DB.Save(&menu3)
-		DB.Save(&menu4)
-		DB.Save(&menu5)
+	// 为角色分配菜单（先清空再添加，确保所有菜单都有）
+	DB.Exec("DELETE FROM role_menus WHERE role_id = ?", adminRole.ID)
+	for _, menu := range createdMenus {
+		DB.Exec("INSERT OR IGNORE INTO role_menus (role_id, menu_id) VALUES (?, ?)", adminRole.ID, menu.ID)
+	}
 
-		menus := []models.Menu{menu1, menu2, menu3, menu4, menu5, menu6, menu7, menu8, menu9, menu10}
-
-		// 为角色分配菜单
-		for _, menu := range menus {
-			DB.Exec("INSERT INTO role_menus (role_id, menu_id) VALUES (?, ?)", adminRole.ID, menu.ID)
-		}
-
-		// 创建默认产品
+	// 创建默认产品（如果不存在）
+	var productCount int64
+	DB.Model(&models.Product{}).Count(&productCount)
+	if productCount == 0 {
 		products := []models.Product{
 			{Name: "产品1", Code: "PROD001", Price: 199.99, Spec: "产品1规格"},
 			{Name: "产品2", Code: "PROD002", Price: 299.99, Spec: "产品2规格"},
 			{Name: "产品3", Code: "PROD003", Price: 399.99, Spec: "产品3规格"},
 		}
 		for _, p := range products {
-			DB.Create(&p)
+			DB.FirstOrCreate(&p, models.Product{Code: p.Code})
 		}
+	}
 
+	// 创建默认管理员用户（如果不存在）
+	var userCount int64
+	DB.Model(&models.User{}).Where("username = ?", "admin").Count(&userCount)
+	if userCount == 0 {
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 		adminUser := models.User{
 			Username: "admin",
@@ -117,7 +131,7 @@ func seedData() {
 			RoleID:   adminRole.ID,
 		}
 		DB.Create(&adminUser)
-
-		fmt.Println("Initial data seeded successfully")
 	}
+
+	fmt.Println("Initial data seeded/updated successfully")
 }
