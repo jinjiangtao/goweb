@@ -241,7 +241,7 @@ watch(() => props.visible, (val) => {
       formRef.value?.clearValidate()
     })
   }
-})
+}, { immediate: true })
 
 const beforeUpload = (file) => {
   const isImage = file.type.startsWith('image/')
