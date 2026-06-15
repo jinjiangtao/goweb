@@ -10,14 +10,14 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="全部" clearable @change="fetchList">
-            <el-option label="上架" value="1" />
-            <el-option label="下架" value="0" />
+            <el-option label="上架" :value="1" />
+            <el-option label="下架" :value="0" />
           </el-select>
         </el-form-item>
         <el-form-item label="推荐">
           <el-select v-model="searchForm.is_recommended" placeholder="全部" clearable @change="fetchList">
-            <el-option label="已推荐" value="1" />
-            <el-option label="未推荐" value="0" />
+            <el-option label="已推荐" :value="1" />
+            <el-option label="未推荐" :value="0" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -111,8 +111,8 @@ const editData = ref(null)
 const searchForm = reactive({
   title: '',
   community: '',
-  status: '',
-  is_recommended: '',
+  status: null,
+  is_recommended: null,
 })
 
 const formatDate = (dateStr) => {
@@ -131,8 +131,8 @@ const fetchList = async () => {
     }
     if (searchForm.title) params.title = searchForm.title
     if (searchForm.community) params.community = searchForm.community
-    if (searchForm.status !== '') params.status = searchForm.status
-    if (searchForm.is_recommended !== '') params.is_recommended = searchForm.is_recommended
+    if (searchForm.status !== null && searchForm.status !== '') params.status = searchForm.status
+    if (searchForm.is_recommended !== null && searchForm.is_recommended !== '') params.is_recommended = searchForm.is_recommended
 
     const res = await getHouses(params)
     list.value = res.data.list || []
@@ -145,8 +145,8 @@ const fetchList = async () => {
 const resetSearch = () => {
   searchForm.title = ''
   searchForm.community = ''
-  searchForm.status = ''
-  searchForm.is_recommended = ''
+  searchForm.status = null
+  searchForm.is_recommended = null
   page.value = 1
   fetchList()
 }
