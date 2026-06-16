@@ -34,6 +34,7 @@ type House struct {
 	ContactName   string         `gorm:"size:50;not null" json:"contact_name"`
 	ContactPhone  string         `gorm:"size:20;not null" json:"contact_phone"`
 	Images        string         `gorm:"type:text" json:"images"`
+	ViewCount     int            `gorm:"default:0" json:"view_count"`
 	Status        int            `gorm:"default:1" json:"status"`
 	IsRecommended bool           `gorm:"default:false" json:"is_recommended"`
 	CreatedAt     time.Time      `json:"created_at"`
@@ -43,4 +44,18 @@ type House struct {
 
 func (House) TableName() string {
 	return "houses"
+}
+
+type Consult struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	HouseID   uint           `gorm:"index;not null" json:"house_id"`
+	UserID    uint           `gorm:"index;default:0" json:"user_id"`
+	UserName  string         `gorm:"size:50" json:"user_name"`
+	UserPhone string         `gorm:"size:20" json:"user_phone"`
+	CreatedAt time.Time      `json:"created_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+func (Consult) TableName() string {
+	return "consults"
 }

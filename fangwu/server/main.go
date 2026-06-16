@@ -23,7 +23,7 @@ func main() {
 	}
 	models.DB = db
 
-	db.AutoMigrate(&models.Admin{}, &models.House{})
+	db.AutoMigrate(&models.Admin{}, &models.House{}, &models.Consult{})
 
 	seedAdmin(db)
 
@@ -36,6 +36,15 @@ func main() {
 	api := r.Group("/api")
 	{
 		api.POST("/login", handlers.Login)
+
+		publicAPI := api.Group("/public")
+		{
+			publicAPI.GET("/houses", handlers.PublicListHouses)
+			publicAPI.GET("/houses/:id", handlers.PublicGetHouse)
+			publicAPI.POST("/houses/:id/view", handlers.IncrementViewCount)
+			publicAPI.POST("/houses/:id/consult", handlers.RecordConsult)
+			publicAPI.GET("/houses/:id/recommend", handlers.GetRecommendHouses)
+		}
 	}
 
 	authAPI := api.Group("")
