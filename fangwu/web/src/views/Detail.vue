@@ -308,6 +308,7 @@ onMounted(() => {
   aspect-ratio: 16 / 10;
   max-height: 450px;
   background: #f0f0f0;
+  overflow: hidden;
 }
 
 .detail-main {

@@ -140,12 +140,14 @@ onUnmounted(() => {
 .image-carousel {
   position: relative;
   width: 100%;
+  height: 100%;
   overflow: hidden;
   background: #f0f0f0;
 }
 
 .carousel-container {
   display: flex;
+  height: 100%;
   transition: transform 0.4s ease;
   touch-action: pan-y;
 }
@@ -153,6 +155,7 @@ onUnmounted(() => {
 .carousel-slide {
   flex-shrink: 0;
   width: 100%;
+  height: 100%;
 }
 
 .carousel-slide img {
