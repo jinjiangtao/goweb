@@ -50,3 +50,16 @@ export const articleApi = {
     return request(`/articles/search?${query}`)
   },
 }
+
+export const versionApi = {
+  getList: (articleId, params) => {
+    const query = params ? new URLSearchParams(params).toString() : ''
+    return request(`/articles/${articleId}/versions${query ? '?' + query : ''}`)
+  },
+  getDetail: (versionId) => request(`/versions/${versionId}`),
+  compare: (articleId, oldVerId, newVerId) => {
+    return request(`/articles/${articleId}/versions/compare?old_version_id=${oldVerId}&new_version_id=${newVerId}`)
+  },
+  rollback: (articleId, versionId) => request(`/articles/${articleId}/versions/${versionId}/rollback`, { method: 'POST' }),
+  delete: (versionId) => request(`/versions/${versionId}`, { method: 'DELETE' }),
+}

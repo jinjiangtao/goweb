@@ -1,8 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import MarkdownIt from 'markdown-it'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.css'
 import { articleApi } from '../api'
 import { useAuth } from '../context/AuthContext'
+import VersionHistory from '../components/VersionHistory'
 import './ArticleDetail.css'
+
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  typographer: true,
+  highlight(str, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(str, { language: lang }).value
+      } catch {
+        // ignore
+      }
+    }
+    try {
+      return hljs.highlightAuto(str).value
+    } catch {
+      // ignore
+    }
+    return ''
+  },
+})
 
 export default function ArticleDetail() {
   const { id } = useParams()
@@ -46,6 +71,8 @@ export default function ArticleDetail() {
     })
   }
 
+  const htmlContent = useMemo(() => md.render(article?.content || ''), [article?.content])
+
   if (loading) return <div className="loading">加载中...</div>
   if (!article) return <div className="loading">文章不存在</div>
 
@@ -61,11 +88,10 @@ export default function ArticleDetail() {
           </div>
         </header>
 
-        <div className="article-content">
-          {article.content.split('\n').map((paragraph, idx) => (
-            <p key={idx}>{paragraph}</p>
-          ))}
-        </div>
+        <div
+          className="article-content markdown-body"
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
 
         {canEdit && (
           <div className="article-actions">
@@ -74,6 +100,8 @@ export default function ArticleDetail() {
           </div>
         )}
       </article>
+
+      {user && <VersionHistory articleId={id} />}
     </div>
   )
 }

@@ -45,6 +45,8 @@ func main() {
 			articles.GET("", handlers.GetArticles)
 			articles.GET("/search", handlers.SearchArticles)
 			articles.GET("/:id", handlers.GetArticle)
+			articles.GET("/:id/versions", handlers.GetVersions)
+			articles.GET("/:id/versions/compare", handlers.CompareVersions)
 		}
 
 		protected := api.Group("")
@@ -56,6 +58,10 @@ func main() {
 			protected.PUT("/articles/:id", handlers.UpdateArticle)
 			protected.DELETE("/articles/:id", handlers.DeleteArticle)
 			protected.GET("/articles/mine", handlers.GetMyArticles)
+
+			protected.GET("/versions/:versionId", handlers.GetVersionDetail)
+			protected.POST("/articles/:id/versions/:versionId/rollback", handlers.RollbackVersion)
+			protected.DELETE("/versions/:versionId", handlers.DeleteVersion)
 
 			adminRoutes := protected.Group("/admin")
 			adminRoutes.Use(middleware.AdminMiddleware())

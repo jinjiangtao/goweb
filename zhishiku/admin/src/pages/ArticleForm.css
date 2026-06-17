@@ -87,3 +87,9 @@
 .btn-cancel:hover {
   background: #f9fafb;
 }
+
+.form-hint {
+  font-weight: 400;
+  color: #9ca3af;
+  font-size: 12px;
+}

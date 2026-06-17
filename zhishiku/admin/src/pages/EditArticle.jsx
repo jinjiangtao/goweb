@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { articleApi, categoryApi } from '../api'
 import { useAuth } from '../context/AuthContext'
+import MarkdownEditor from '../components/MarkdownEditor'
 import './ArticleForm.css'
 
 export default function EditArticle() {
@@ -64,7 +65,7 @@ export default function EditArticle() {
         category_id: Number(form.category_id),
         status: form.status,
       })
-      navigate('/')
+      navigate(`/article/${id}`)
     } catch (err) {
       alert(err.message)
     } finally {
@@ -103,12 +104,10 @@ export default function EditArticle() {
         </div>
 
         <div className="form-group">
-          <label>正文 *</label>
-          <textarea
+          <label>正文 * <span className="form-hint">（支持 Markdown 语法）</span></label>
+          <MarkdownEditor
             value={form.content}
-            onChange={(e) => setForm({ ...form, content: e.target.value })}
-            rows={15}
-            required
+            onChange={(val) => setForm({ ...form, content: val })}
           />
         </div>
 

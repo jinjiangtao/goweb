@@ -9,6 +9,7 @@ import MyArticles from './pages/MyArticles'
 import Categories from './pages/Categories'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import VersionCompare from './pages/VersionCompare'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/article/edit/:id" element={<EditArticle />} />
           <Route path="/my-articles" element={<MyArticles />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/compare/:id" element={<VersionCompare />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>

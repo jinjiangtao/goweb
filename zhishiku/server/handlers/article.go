@@ -127,6 +127,19 @@ func CreateArticle(c *gin.Context) {
 		return
 	}
 
+	var maxVer int
+	db.Model(&models.ArticleVersion{}).Where("article_id = ?", article.ID).Select("COALESCE(MAX(version_number), 0)").Scan(&maxVer)
+	version := models.ArticleVersion{
+		ArticleID:       article.ID,
+		VersionNumber:   maxVer + 1,
+		TitleSnapshot:   article.Title,
+		ContentSnapshot: article.Content,
+		CategoryIDSnap:  article.CategoryID,
+		StatusSnapshot:  article.Status,
+		CreatorID:       userID,
+	}
+	db.Create(&version)
+
 	c.JSON(http.StatusCreated, gin.H{"id": article.ID, "message": "创建成功"})
 }
 
@@ -173,6 +186,21 @@ func UpdateArticle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新文章失败"})
 		return
 	}
+
+	var maxVer int
+	db.Model(&models.ArticleVersion{}).Where("article_id = ?", article.ID).Select("COALESCE(MAX(version_number), 0)").Scan(&maxVer)
+	newVersion := models.ArticleVersion{
+		ArticleID:       article.ID,
+		VersionNumber:   maxVer + 1,
+		TitleSnapshot:   article.Title,
+		ContentSnapshot: article.Content,
+		CategoryIDSnap:  article.CategoryID,
+		StatusSnapshot:  article.Status,
+		CreatorID:       userID,
+	}
+	db.Create(&newVersion)
+
+	cleanupOldVersions(article.ID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
 }

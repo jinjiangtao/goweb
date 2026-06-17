@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { articleApi, categoryApi } from '../api'
 import { useAuth } from '../context/AuthContext'
+import MarkdownEditor from '../components/MarkdownEditor'
 import './ArticleForm.css'
 
 export default function CreateArticle() {
@@ -86,13 +87,11 @@ export default function CreateArticle() {
         </div>
 
         <div className="form-group">
-          <label>正文 *</label>
-          <textarea
+          <label>正文 * <span className="form-hint">（支持 Markdown 语法）</span></label>
+          <MarkdownEditor
             value={form.content}
-            onChange={(e) => setForm({ ...form, content: e.target.value })}
-            placeholder="请输入文章正文"
-            rows={15}
-            required
+            onChange={(val) => setForm({ ...form, content: val })}
+            placeholder="请输入 Markdown 内容..."
           />
         </div>
 
