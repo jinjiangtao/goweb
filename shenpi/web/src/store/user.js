@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { login as loginApi } from '@/api/user'
 import request from '@/utils/request'
 
 export const useUserStore = defineStore('user', () => {
@@ -26,30 +27,19 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function login(loginForm) {
-    const res = await request({
-      url: '/user/login',
-      method: 'post',
-      data: loginForm
-    })
+    const res = await loginApi(loginForm)
     setToken(res.data.token)
     setUserInfo(res.data.user)
     return res
   }
 
-  async function logout() {
-    try {
-      await request({
-        url: '/user/logout',
-        method: 'post'
-      })
-    } finally {
-      clearUser()
-    }
+  function logout() {
+    clearUser()
   }
 
-  async function getUserInfo() {
+  async function fetchUserInfo() {
     const res = await request({
-      url: '/user/info',
+      url: '/user/profile',
       method: 'get'
     })
     setUserInfo(res.data)
@@ -65,6 +55,6 @@ export const useUserStore = defineStore('user', () => {
     clearUser,
     login,
     logout,
-    getUserInfo
+    fetchUserInfo
   }
 })

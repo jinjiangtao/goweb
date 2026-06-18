@@ -2,22 +2,23 @@ import request from '@/utils/request'
 
 export function login(data) {
   return request({
-    url: '/user/login',
+    url: '/auth/login',
     method: 'post',
     data
   })
 }
 
-export function logout() {
+export function register(data) {
   return request({
-    url: '/user/logout',
-    method: 'post'
+    url: '/auth/register',
+    method: 'post',
+    data
   })
 }
 
-export function getUserInfo() {
+export function getProfile() {
   return request({
-    url: '/user/info',
+    url: '/user/profile',
     method: 'get'
   })
 }
@@ -30,25 +31,9 @@ export function getUserList(params) {
   })
 }
 
-export function createUser(data) {
-  return request({
-    url: '/user',
-    method: 'post',
-    data
-  })
-}
-
-export function updateUser(id, data) {
+export function getUserById(id) {
   return request({
     url: `/user/${id}`,
-    method: 'put',
-    data
-  })
-}
-
-export function deleteUser(id) {
-  return request({
-    url: `/user/${id}`,
-    method: 'delete'
+    method: 'get'
   })
 }
