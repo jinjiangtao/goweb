@@ -59,6 +59,14 @@ func expandRecurringEvents(events []models.Event, startDate, endDate time.Time) 
 	return expanded
 }
 
+func parseISO8601(s string) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339Nano, s)
+	if err != nil {
+		t, err = time.Parse(time.RFC3339, s)
+	}
+	return t, err
+}
+
 func GetEvents(c *gin.Context) {
 	var params EventQueryParams
 	if err := c.ShouldBindQuery(&params); err != nil {
@@ -66,21 +74,43 @@ func GetEvents(c *gin.Context) {
 		return
 	}
 
-	events := make([]models.Event, 0)
-	query := database.DB.Preload("Category")
+	var startDate, endDate time.Time
+	var startOk, endOk bool
 
 	if params.StartDate != "" {
-		start, err := time.Parse(time.RFC3339, params.StartDate)
-		if err == nil {
-			query = query.Where("start_time >= ? OR is_recurring = ?", start, true)
+		if t, err := parseISO8601(params.StartDate); err == nil {
+			startDate = t
+			startOk = true
 		}
 	}
 	if params.EndDate != "" {
-		end, err := time.Parse(time.RFC3339, params.EndDate)
-		if err == nil {
-			query = query.Where("start_time <= ? OR is_recurring = ?", end, true)
+		if t, err := parseISO8601(params.EndDate); err == nil {
+			endDate = t
+			endOk = true
 		}
 	}
+
+	if !startOk {
+		startDate = time.Now().AddDate(-1, 0, 0)
+	}
+	if !endOk {
+		endDate = time.Now().AddDate(1, 0, 0)
+	}
+
+	events := make([]models.Event, 0)
+	query := database.DB.Preload("Category")
+
+	if startOk && endOk {
+		query = query.Where(
+			"(end_time >= ? AND start_time <= ?) OR is_recurring = ?",
+			startDate, endDate, true,
+		)
+	} else if startOk {
+		query = query.Where("end_time >= ? OR is_recurring = ?", startDate, true)
+	} else if endOk {
+		query = query.Where("start_time <= ? OR is_recurring = ?", endDate, true)
+	}
+
 	if params.CategoryID > 0 {
 		query = query.Where("category_id = ?", params.CategoryID)
 	}
@@ -91,18 +121,6 @@ func GetEvents(c *gin.Context) {
 	if err := query.Order("start_time").Find(&events).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	var startDate, endDate time.Time
-	if params.StartDate != "" {
-		startDate, _ = time.Parse(time.RFC3339, params.StartDate)
-	} else {
-		startDate = time.Now().AddDate(-1, 0, 0)
-	}
-	if params.EndDate != "" {
-		endDate, _ = time.Parse(time.RFC3339, params.EndDate)
-	} else {
-		endDate = time.Now().AddDate(1, 0, 0)
 	}
 
 	expandedEvents := expandRecurringEvents(events, startDate, endDate)
