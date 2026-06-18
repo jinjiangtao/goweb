@@ -312,6 +312,12 @@ onMounted(() => {
     loadTemplate()
   } else {
     initDefaultNodes()
+    if (route.query.name) {
+      templateName.value = route.query.name
+    }
+    if (route.query.type) {
+      templateType.value = route.query.type
+    }
   }
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', onMouseUp)
@@ -349,15 +355,15 @@ const loadTemplate = async () => {
     templateName.value = template.name
     templateType.value = template.type || 'general'
     if (template.nodes) {
-      nodes.value = JSON.parse(template.nodes)
+      nodes.value = typeof template.nodes === 'string' ? JSON.parse(template.nodes) : template.nodes
     }
     if (template.edges) {
-      edges.value = JSON.parse(template.edges)
+      edges.value = typeof template.edges === 'string' ? JSON.parse(template.edges) : template.edges
     }
     if (template.form_config) {
-      formFields.value = JSON.parse(template.form_config)
+      formFields.value = typeof template.form_config === 'string' ? JSON.parse(template.form_config) : template.form_config
     } else if (template.FormConfig) {
-      formFields.value = JSON.parse(template.FormConfig)
+      formFields.value = typeof template.FormConfig === 'string' ? JSON.parse(template.FormConfig) : template.FormConfig
     }
   } catch (e) {
     console.error('加载模板失败', e)
@@ -611,9 +617,9 @@ const saveTemplate = async () => {
     name: templateName.value,
     type: templateType.value,
     description: '',
-    nodes: JSON.stringify(nodes.value),
-    edges: JSON.stringify(edges.value),
-    form_config: JSON.stringify(formFields.value),
+    nodes: nodes.value,
+    edges: edges.value,
+    form_config: formFields.value,
     status: 'published'
   }
 

@@ -72,7 +72,35 @@ func (c *TemplateController) Get(ctx *gin.Context) {
 		return
 	}
 
-	utils.Success(ctx, template)
+	var nodes interface{}
+	if template.Nodes != "" {
+		json.Unmarshal([]byte(template.Nodes), &nodes)
+	}
+
+	var edges interface{}
+	if template.Edges != "" {
+		json.Unmarshal([]byte(template.Edges), &edges)
+	}
+
+	var formConfig interface{}
+	if template.FormConfig != "" {
+		json.Unmarshal([]byte(template.FormConfig), &formConfig)
+	}
+
+	utils.Success(ctx, gin.H{
+		"id":          template.ID,
+		"name":        template.Name,
+		"description": template.Description,
+		"type":        template.Type,
+		"form_config": formConfig,
+		"nodes":       nodes,
+		"edges":       edges,
+		"status":      template.Status,
+		"creator_id":  template.CreatorID,
+		"creator":     template.Creator,
+		"created_at":  template.CreatedAt,
+		"updated_at":  template.UpdatedAt,
+	})
 }
 
 func (c *TemplateController) List(ctx *gin.Context) {
@@ -88,10 +116,40 @@ func (c *TemplateController) List(ctx *gin.Context) {
 		return
 	}
 
+	result := make([]gin.H, 0, len(templates))
+	for _, t := range templates {
+		var nodes interface{}
+		if t.Nodes != "" {
+			json.Unmarshal([]byte(t.Nodes), &nodes)
+		}
+		var edges interface{}
+		if t.Edges != "" {
+			json.Unmarshal([]byte(t.Edges), &edges)
+		}
+		var formConfig interface{}
+		if t.FormConfig != "" {
+			json.Unmarshal([]byte(t.FormConfig), &formConfig)
+		}
+		result = append(result, gin.H{
+			"id":          t.ID,
+			"name":        t.Name,
+			"description": t.Description,
+			"type":        t.Type,
+			"form_config": formConfig,
+			"nodes":       nodes,
+			"edges":       edges,
+			"status":      t.Status,
+			"creator_id":  t.CreatorID,
+			"creator":     t.Creator,
+			"created_at":  t.CreatedAt,
+			"updated_at":  t.UpdatedAt,
+		})
+	}
+
 	utils.Success(ctx, gin.H{
-		"list":  templates,
-		"total": total,
-		"page":  page,
+		"list":     result,
+		"total":    total,
+		"page":     page,
 		"pageSize": pageSize,
 	})
 }
