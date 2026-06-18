@@ -7,7 +7,7 @@
             <el-icon><Document /></el-icon>
             <span>代码片段分享平台</span>
           </router-link>
-          <div class="header-search">
+            <div class="header-search">
             <el-input
               v-model="searchKeyword"
               placeholder="搜索代码片段..."
@@ -17,7 +17,7 @@
               @keyup.enter="goSearch"
             >
               <template #append>
-                <el-button :icon="Search" @click="goSearch" />
+                <el-button :icon="Search" type="primary" @click="goSearch">搜索</el-button>
               </template>
             </el-input>
           </div>

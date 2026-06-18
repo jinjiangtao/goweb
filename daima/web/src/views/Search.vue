@@ -1,7 +1,10 @@
 <template>
   <div class="page-container">
     <div class="flex-between mb-20 flex-wrap gap-12">
-      <h2 style="font-size:20px;">搜索: {{ keyword }}</h2>
+      <div class="flex gap-12 items-center">
+        <h2 style="font-size:20px;">搜索: {{ keyword }}</h2>
+        <span class="text-muted text-sm">共找到 {{ total }} 条结果</span>
+      </div>
       <el-select v-model="language" placeholder="语言过滤" size="large" clearable style="width:160px;">
         <el-option label="全部语言" value="all" />
         <el-option v-for="lang in languages" :key="lang" :label="lang" :value="lang" />
