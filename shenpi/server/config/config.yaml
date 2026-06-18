@@ -1,0 +1,15 @@
+server:
+  port: "8080"
+  mode: "debug"
+
+database:
+  driver: "sqlite"
+  dsn: "./data/shenpi.db"
+
+jwt:
+  secret: "shenpi-secret-key-2024"
+  expires: 86400
+
+log:
+  level: "info"
+  path: "./logs"
