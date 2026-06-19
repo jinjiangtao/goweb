@@ -49,7 +49,7 @@
               <el-slider
                 v-model="form.count"
                 :min="5"
-                :max="Math.max(5, Math.min(totalQuestions, 100))"
+                :max="sliderMax"
                 :step="5"
                 show-input
                 :marks="marks"
@@ -122,13 +122,25 @@ const form = reactive({
   difficulty: 0
 })
 
-const marks = {
-  5: '5题',
-  10: '10题',
-  20: '20题',
-  50: '50题',
-  100: '100题'
-}
+const sliderMax = computed(() => Math.max(5, Math.min(totalQuestions.value, 100)))
+
+const marks = computed(() => {
+  const allMarks = {
+    5: '5题',
+    10: '10题',
+    20: '20题',
+    50: '50题',
+    100: '100题'
+  }
+  const valid = {}
+  for (const key in allMarks) {
+    const numKey = Number(key)
+    if (!isNaN(numKey) && numKey >= 5 && numKey <= sliderMax.value) {
+      valid[numKey] = allMarks[key]
+    }
+  }
+  return valid
+})
 
 const tips = computed(() => {
   const modeName = { order: '顺序刷题', random: '随机组卷', smart: '智能组卷' }[selectedMode.value]
