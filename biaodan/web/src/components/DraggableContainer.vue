@@ -1,11 +1,23 @@
 <template>
   <div class="draggable-container" ref="containerRef">
-    <slot />
+    <div
+      v-for="(item, index) in innerList"
+      :key="item[itemKey] || index"
+      class="draggable-item"
+      :draggable="true"
+      @dragstart="onItemDragStart($event, index)"
+      @dragover="onItemDragOver($event, index)"
+      @drop="onItemDrop($event, index)"
+      @dragend="onDragEnd"
+      @dragenter.prevent
+    >
+      <slot name="item" :element="item" :index="index" />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -27,123 +39,92 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
-const containerRef = ref(null)
+
+const innerList = ref([...props.modelValue])
 let dragSrcIndex = -1
-let draggingEl = null
-let items = []
+let lastOverIndex = -1
 
-function getChildren() {
-  if (!containerRef.value) return []
-  return Array.from(containerRef.value.querySelectorAll(':scope > .field-wrapper'))
-}
+watch(
+  () => props.modelValue,
+  (val) => {
+    innerList.value = Array.isArray(val) ? [...val] : []
+  },
+  { deep: true }
+)
 
-function getItemIndex(el) {
-  const children = getChildren()
-  return children.indexOf(el)
-}
-
-function onDragStart(e) {
-  const target = e.target.closest('.field-wrapper')
-  if (!target) return
-  dragSrcIndex = getItemIndex(target)
-  draggingEl = target
-  target.style.opacity = '0.4'
+function onItemDragStart(e, index) {
+  dragSrcIndex = index
+  lastOverIndex = index
   e.dataTransfer.effectAllowed = 'move'
   try {
-    e.dataTransfer.setData('text/plain', String(dragSrcIndex))
+    e.dataTransfer.setData('text/plain', String(index))
   } catch (err) {}
-}
-
-function onDragEnd(e) {
-  if (draggingEl) {
-    draggingEl.style.opacity = ''
-  }
-  draggingEl = null
-  dragSrcIndex = -1
-  const children = getChildren()
-  children.forEach(el => {
-    el.classList.remove(props.ghostClass)
-    el.style.transform = ''
-    el.style.transition = ''
+  requestAnimationFrame(() => {
+    const el = e.currentTarget
+    if (el) {
+      el.classList.add(props.ghostClass)
+      el.style.opacity = '0.4'
+    }
   })
 }
 
-function onDragOver(e) {
+function onItemDragOver(e, index) {
   e.preventDefault()
-  if (dragSrcIndex < 0 || !draggingEl) return
+  if (dragSrcIndex < 0) return
   e.dataTransfer.dropEffect = 'move'
+  if (index === dragSrcIndex || index === lastOverIndex) return
+  lastOverIndex = index
 
-  const target = e.target.closest('.field-wrapper')
-  if (!target || target === draggingEl) return
-
-  const targetIndex = getItemIndex(target)
-  if (targetIndex < 0) return
-
-  const children = getChildren()
-  const srcEl = children[dragSrcIndex]
-  const rect = target.getBoundingClientRect()
-  const insertBefore = e.clientY < rect.top + rect.height / 2
-
-  if (insertBefore) {
-    target.parentNode.insertBefore(srcEl, target)
-  } else {
-    target.parentNode.insertBefore(srcEl, target.nextSibling)
-  }
-
-  const newIndex = getItemIndex(srcEl)
-  if (newIndex !== dragSrcIndex) {
-    const newArr = [...props.modelValue]
-    const [item] = newArr.splice(dragSrcIndex, 1)
-    newArr.splice(newIndex, 0, item)
-    emit('update:modelValue', newArr)
-    emit('change', newArr)
-    dragSrcIndex = newIndex
-  }
+  const list = innerList.value
+  const srcItem = list[dragSrcIndex]
+  list.splice(dragSrcIndex, 1)
+  list.splice(index, 0, srcItem)
+  dragSrcIndex = index
 }
 
-function onDrop(e) {
+function onItemDrop(e, index) {
   e.preventDefault()
-  onDragEnd()
+  if (dragSrcIndex < 0) return
+  e.stopPropagation()
+  commitChange()
 }
 
-function bindEvents() {
-  if (!containerRef.value) return
-  const container = containerRef.value
-  container.addEventListener('dragstart', onDragStart)
-  container.addEventListener('dragend', onDragEnd)
-  container.addEventListener('dragover', onDragOver)
-  container.addEventListener('drop', onDrop)
+function onDragEnd() {
+  if (dragSrcIndex >= 0) {
+    commitChange()
+  }
 }
 
-function unbindEvents() {
-  if (!containerRef.value) return
-  const container = containerRef.value
-  container.removeEventListener('dragstart', onDragStart)
-  container.removeEventListener('dragend', onDragEnd)
-  container.removeEventListener('dragover', onDragOver)
-  container.removeEventListener('drop', onDrop)
-}
-
-watch(() => props.modelValue, () => {
-  nextTick(() => {
-    const children = getChildren()
-    children.forEach(el => {
-      el.setAttribute('draggable', 'true')
+function commitChange() {
+  const newArr = [...innerList.value]
+  dragSrcIndex = -1
+  lastOverIndex = -1
+  emit('update:modelValue', newArr)
+  emit('change', newArr)
+  setTimeout(() => {
+    document.querySelectorAll('.' + props.ghostClass).forEach((el) => {
+      el.classList.remove(props.ghostClass)
+      el.style.opacity = ''
     })
-  })
-}, { deep: true, immediate: true })
+  }, 0)
+}
 
-onMounted(() => {
-  nextTick(bindEvents)
-})
-
-onBeforeUnmount(() => {
-  unbindEvents()
-})
+onMounted(() => {})
+onBeforeUnmount(() => {})
 </script>
 
 <style scoped>
 .draggable-container {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.draggable-item {
+  transition: transform 0.2s ease;
+}
+
+.ghost {
+  opacity: 0.5;
 }
 </style>
