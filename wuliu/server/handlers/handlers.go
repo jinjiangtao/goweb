@@ -21,6 +21,62 @@ type CreateOrderRequest struct {
 	Weight      float64 `json:"weight"`
 }
 
+func refreshOrderStatus(orderID uint) {
+	var order models.LogisticsOrder
+	if err := database.DB.First(&order, orderID).Error; err != nil {
+		return
+	}
+
+	var nodes []models.LogisticsNode
+	database.DB.Where("order_id = ?", orderID).Order("occurred_at ASC, id ASC").Find(&nodes)
+
+	if len(nodes) == 0 {
+		order.Status = models.OrderStatusPending
+		database.DB.Save(&order)
+		return
+	}
+
+	hasAbnormal := false
+	hasDelivered := false
+	hasArrived := false
+	hasInTransit := false
+	hasPicked := false
+
+	for _, node := range nodes {
+		if node.IsAbnormal {
+			hasAbnormal = true
+		}
+		switch node.Status {
+		case models.NodeStatusDelivered:
+			hasDelivered = true
+		case models.NodeStatusArrived:
+			hasArrived = true
+		case models.NodeStatusInTransit:
+			hasInTransit = true
+		case models.NodeStatusPicked:
+			hasPicked = true
+		}
+	}
+
+	newStatus := models.OrderStatusPending
+	if hasDelivered {
+		newStatus = models.OrderStatusDelivered
+	} else if hasAbnormal {
+		newStatus = models.OrderStatusException
+	} else if hasArrived {
+		newStatus = models.OrderStatusArrived
+	} else if hasInTransit {
+		newStatus = models.OrderStatusInTransit
+	} else if hasPicked {
+		newStatus = models.OrderStatusPicked
+	}
+
+	if order.Status != newStatus {
+		order.Status = newStatus
+		database.DB.Save(&order)
+	}
+}
+
 func CreateOrder(c *gin.Context) {
 	var req CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -54,13 +110,26 @@ func GetOrders(c *gin.Context) {
 	var orders []models.LogisticsOrder
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	keyword := c.Query("keyword")
 
 	offset := (page - 1) * pageSize
 
-	var total int64
-	database.DB.Model(&models.LogisticsOrder{}).Count(&total)
+	query := database.DB.Model(&models.LogisticsOrder{})
+	if keyword != "" {
+		query = query.Where("order_no LIKE ? OR sender LIKE ? OR receiver LIKE ? OR origin LIKE ? OR destination LIKE ? OR goods_name LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
 
-	if err := database.DB.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&orders).Error; err != nil {
+	var total int64
+	query.Count(&total)
+
+	dbQuery := database.DB.Model(&models.LogisticsOrder{})
+	if keyword != "" {
+		dbQuery = dbQuery.Where("order_no LIKE ? OR sender LIKE ? OR receiver LIKE ? OR origin LIKE ? OR destination LIKE ? OR goods_name LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	if err := dbQuery.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&orders).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -236,8 +305,11 @@ func AddNode(c *gin.Context) {
 	} else if !req.IsAbnormal && status == models.NodeStatusDelivered {
 		order.Status = models.OrderStatusDelivered
 		database.DB.Save(&order)
-	} else if status == models.NodeStatusArrived && order.Status != models.OrderStatusException {
+	} else if status == models.NodeStatusArrived && order.Status != models.OrderStatusException && order.Status != models.OrderStatusDelivered {
 		order.Status = models.OrderStatusArrived
+		database.DB.Save(&order)
+	} else if status == models.NodeStatusInTransit && order.Status != models.OrderStatusException && order.Status != models.OrderStatusArrived && order.Status != models.OrderStatusDelivered {
+		order.Status = models.OrderStatusInTransit
 		database.DB.Save(&order)
 	} else if status == models.NodeStatusPicked && order.Status == models.OrderStatusPending {
 		order.Status = models.OrderStatusPicked
@@ -319,6 +391,8 @@ func UpdateNode(c *gin.Context) {
 		return
 	}
 
+	refreshOrderStatus(node.OrderID)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "节点更新成功",
 		"data":    node,
@@ -328,10 +402,20 @@ func UpdateNode(c *gin.Context) {
 func DeleteNode(c *gin.Context) {
 	id := c.Param("node_id")
 
-	if err := database.DB.Delete(&models.LogisticsNode{}, id).Error; err != nil {
+	var node models.LogisticsNode
+	if err := database.DB.First(&node, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "节点不存在"})
+		return
+	}
+
+	orderID := node.OrderID
+
+	if err := database.DB.Delete(&node).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	refreshOrderStatus(orderID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "节点删除成功"})
 }

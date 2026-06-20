@@ -46,16 +46,17 @@
         <div class="search-bar">
           <el-input
             v-model="searchKeyword"
-            placeholder="搜索订单号"
+            placeholder="搜索订单号、收发件人、地址、货物名称"
             clearable
-            style="width: 300px"
-            @keyup.enter="loadOrders"
+            style="width: 360px"
+            @keyup.enter="handleSearchOrder"
+            @clear="handleClearSearch"
           >
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
-          <el-button type="primary" @click="loadOrders">查询</el-button>
+          <el-button type="primary" @click="handleSearchOrder">查询</el-button>
         </div>
 
         <div class="table-card">
@@ -308,7 +309,8 @@ const orderForm = ref({
   origin: '',
   destination: '',
   goods_name: '',
-  weight: 0
+  weight: 0,
+  status: 'pending'
 })
 
 const nodeSearchOrderNo = ref('')
@@ -367,10 +369,14 @@ const formatTime = (timeStr) => {
 const loadOrders = async () => {
   loading.value = true
   try {
-    const res = await getOrders({
+    const params = {
       page: page.value,
       page_size: pageSize.value
-    })
+    }
+    if (searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
+    const res = await getOrders(params)
     orders.value = res.data.data
     total.value = res.data.total
   } catch (err) {
@@ -378,6 +384,17 @@ const loadOrders = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const handleSearchOrder = () => {
+  page.value = 1
+  loadOrders()
+}
+
+const handleClearSearch = () => {
+  searchKeyword.value = ''
+  page.value = 1
+  loadOrders()
 }
 
 const viewOrder = (row) => {
