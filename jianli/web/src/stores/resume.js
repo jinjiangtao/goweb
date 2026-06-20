@@ -56,6 +56,57 @@ function cloneDeep(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
+const STYLE_FIELD_MAP = {
+  primary_color: 'primaryColor',
+  accent_color: 'accentColor',
+  secondary_color: 'secondaryColor',
+  font_family: 'fontFamily',
+  font_size: 'fontSize',
+  line_spacing: 'lineSpacing',
+  margin_top: 'marginTop',
+  margin_bottom: 'marginBottom',
+  margin_left: 'marginLeft',
+  margin_right: 'marginRight'
+}
+const BASIC_FIELD_MAP = {
+  address: 'city',
+  location: 'city',
+  title: 'job_intention',
+  github_url: 'github',
+  website_url: 'website'
+}
+function normalizeStyleConfig(raw) {
+  if (!raw || typeof raw !== 'object') return cloneDeep(DEFAULT_STYLE)
+  const out = cloneDeep(DEFAULT_STYLE)
+  Object.keys(raw).forEach(key => {
+    const mappedKey = STYLE_FIELD_MAP[key] || key
+    if (mappedKey in out) {
+      out[mappedKey] = raw[key]
+    } else {
+      out[key] = raw[key]
+    }
+  })
+  return out
+}
+function normalizeContent(raw) {
+  if (!raw || typeof raw !== 'object') return cloneDeep(DEFAULT_CONTENT)
+  const out = cloneDeep(DEFAULT_CONTENT)
+  Object.keys(raw).forEach(key => {
+    if (key === 'modules') return
+    if (key === 'basic' && raw.basic && typeof raw.basic === 'object') {
+      const basic = { ...out.basic }
+      Object.keys(raw.basic).forEach(k => {
+        const mk = BASIC_FIELD_MAP[k] || k
+        basic[mk] = raw.basic[k]
+      })
+      out.basic = basic
+    } else {
+      out[key] = raw[key]
+    }
+  })
+  return out
+}
+
 export const useResumeStore = defineStore('resume', () => {
   const resumeList = ref([])
   const templates = ref([])
@@ -108,8 +159,8 @@ export const useResumeStore = defineStore('resume', () => {
   }
 
   function getAvailableModules() {
-    const existingTypes = modules.value.map(m => m.type)
-    return MODULE_PRESETS.filter(m => !existingTypes.includes(m.type) && m.removable)
+    const existingTypes = modules.value.map(m => m.type).filter(Boolean)
+    return MODULE_PRESETS.filter(m => m.removable && !existingTypes.includes(m.type))
   }
 
   function selectModule(id) {
@@ -224,24 +275,29 @@ export const useResumeStore = defineStore('resume', () => {
       }
 
       if (data.content && data.content.modules && Array.isArray(data.content.modules)) {
-        modules.value = data.content.modules.map(m => ({
-          id: m.id || generateId(),
-          type: m.type,
-          name: m.name || MODULE_PRESETS.find(p => p.type === m.type)?.name || m.type,
-          removable: m.removable !== false,
-          visible: m.visible !== false,
-          order: m.order || 0
-        }))
+        modules.value = data.content.modules.map(m => {
+          const moduleType = m.type || (typeof m.id === 'string' && ['basic','education','experience','skills','projects','summary','evaluation'].includes(m.id) ? m.id : null)
+          return {
+            id: generateId(),
+            type: moduleType || 'basic',
+            name: m.name || MODULE_PRESETS.find(p => p.type === moduleType)?.name || moduleType || '未命名模块',
+            removable: m.removable !== false && moduleType !== 'basic',
+            visible: m.visible !== false,
+            order: m.order || 0
+          }
+        })
         modules.value.sort((a, b) => (a.order || 0) - (b.order || 0))
         delete data.content.modules
       }
 
       if (data.content) {
-        content.value = { ...cloneDeep(DEFAULT_CONTENT), ...data.content }
+        content.value = normalizeContent(data.content)
       }
 
       if (data.style_config) {
-        styleConfig.value = { ...cloneDeep(DEFAULT_STYLE), ...data.style_config }
+        styleConfig.value = normalizeStyleConfig(data.style_config)
+      } else if (data.style) {
+        styleConfig.value = normalizeStyleConfig(data.style)
       }
 
       if (modules.value.length > 0) {
@@ -259,14 +315,23 @@ export const useResumeStore = defineStore('resume', () => {
     }
     isSaving.value = true
     try {
+      const modulesWithOrder = modules.value.map((m, idx) => ({
+        type: m.type,
+        name: m.name,
+        order: idx,
+        visible: m.visible,
+        removable: m.removable
+      }))
+      const fullContent = {
+        ...content.value,
+        modules: modulesWithOrder
+      }
       const data = {
-        title: currentResume.value?.title || '未命名简历',
-        modules: modules.value,
-        content: content.value,
-        style: styleConfig.value
+        content: fullContent,
+        style_config: styleConfig.value,
+        snapshot_name: currentResume.value?.snapshot_name || ''
       }
       const result = await updateResume(resumeId.value, data)
-      currentResume.value = { ...currentResume.value, ...data }
       return result
     } catch (e) {
       console.error('保存简历失败:', e)
