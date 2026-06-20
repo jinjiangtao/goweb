@@ -33,7 +33,7 @@ export function updateResume(id, data) {
 
 export function deleteResume(id) {
   return request({
-    url: `/resume/${id}`,
+    url: `/resumes/${id}`,
     method: 'delete'
   })
 }

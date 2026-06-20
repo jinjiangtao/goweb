@@ -98,7 +98,7 @@ import {
   Loading
 } from '@element-plus/icons-vue'
 import { useResumeStore } from '@/stores/resume'
-import { getResumeList, deleteResume, exportPDF } from '@/api/resume'
+import { getResumeList, getResumeDetail, deleteResume, exportPDF } from '@/api/resume'
 
 const router = useRouter()
 const resumeStore = useResumeStore()
@@ -151,7 +151,8 @@ const handleDelete = async (resume) => {
 
 const handleExportPDF = async (resume) => {
   try {
-    const blob = await exportPDF(resume.id)
+    const detail = await getResumeDetail(resume.id)
+    const blob = await exportPDF(detail.content, detail.style_config, `${resume.title}.pdf`)
     const url = window.URL.createObjectURL(new Blob([blob]))
     const link = document.createElement('a')
     link.href = url

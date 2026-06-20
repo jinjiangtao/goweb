@@ -101,6 +101,11 @@ const sortedVersions = computed(() => {
   return [...versions.value].sort((a, b) => b.version_number - a.version_number)
 })
 
+function isCurrentVersion(version) {
+  const currentVersion = store.currentResume?.current_version
+  return currentVersion !== undefined && version.version_number === currentVersion
+}
+
 async function loadVersions() {
   if (!props.resumeId) return
   loading.value = true

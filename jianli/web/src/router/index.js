@@ -3,7 +3,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    redirect: '/resume'
+    name: 'Home',
+    component: () => import('@/views/Home.vue')
+  },
+  {
+    path: '/templates',
+    name: 'TemplateSelect',
+    component: () => import('@/views/TemplateSelect.vue')
   },
   {
     path: '/editor/:id',
