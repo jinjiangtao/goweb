@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"fmt"
 	"jianli-server/models"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jung-kurt/gofpdf/v2"
+	"github.com/signintech/gopdf"
 )
 
 type PDFController struct{}
@@ -20,6 +22,10 @@ type PDFController struct{}
 func NewPDFController() *PDFController {
 	return &PDFController{}
 }
+
+var zhFontRegular = "zh"
+var zhFontBold = "zh-bold"
+var zhFontAvailable = false
 
 func (pc *PDFController) ExportPDF(c *gin.Context) {
 	var req struct {
@@ -37,31 +43,89 @@ func (pc *PDFController) ExportPDF(c *gin.Context) {
 		return
 	}
 
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := gopdf.GoPdf{}
+	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
 
-	fontDir := "./fonts"
-	addChineseFont(pdf, fontDir)
+	zhFontAvailable = false
+	if setupFonts(&pdf) {
+		zhFontAvailable = true
+	}
 
-	primaryColor := getStringFromStyle(req.StyleConfig, "primary_color", "#1a1a2e")
-	accentColor := getStringFromStyle(req.StyleConfig, "accent_color", "#0f3460")
-	fontSize := getFloatFromStyle(req.StyleConfig, "font_size", 12)
-	lineSpacing := getFloatFromStyle(req.StyleConfig, "line_spacing", 1.5)
+	primaryColor := getStringFromStyle(req.StyleConfig, "primaryColor", "#1a1a2e")
+	if primaryColor == "#1a1a2e" {
+		if v, ok := req.StyleConfig["primary_color"].(string); ok && v != "" {
+			primaryColor = v
+		}
+	}
+	accentColor := getStringFromStyle(req.StyleConfig, "accentColor", "#0f3460")
+	if accentColor == "#0f3460" {
+		if v, ok := req.StyleConfig["accent_color"].(string); ok && v != "" {
+			accentColor = v
+		}
+	}
+	fontSize := getFloatFromStyle(req.StyleConfig, "fontSize", 12)
+	if fontSize == 12 {
+		if v := getFloatFromStyle(req.StyleConfig, "font_size", 0); v > 0 {
+			fontSize = v
+		}
+	}
+	lineSpacing := getFloatFromStyle(req.StyleConfig, "lineSpacing", 1.5)
+	if lineSpacing == 1.5 {
+		if v := getFloatFromStyle(req.StyleConfig, "line_spacing", 0); v > 0 {
+			lineSpacing = v
+		}
+	}
 
-	pdf.SetFont("zh", "", fontSize)
+	marginLeft := getFloatFromStyle(req.StyleConfig, "marginLeft", 25)
+	if marginLeft == 25 {
+		if v := getFloatFromStyle(req.StyleConfig, "margin_left", 0); v > 0 {
+			marginLeft = v
+		}
+	}
+	marginTop := getFloatFromStyle(req.StyleConfig, "marginTop", 20)
+	if marginTop == 20 {
+		if v := getFloatFromStyle(req.StyleConfig, "margin_top", 0); v > 0 {
+			marginTop = v
+		}
+	}
+	marginRight := getFloatFromStyle(req.StyleConfig, "marginRight", 25)
+	if marginRight == 25 {
+		if v := getFloatFromStyle(req.StyleConfig, "margin_right", 0); v > 0 {
+			marginRight = v
+		}
+	}
+	marginBottom := getFloatFromStyle(req.StyleConfig, "marginBottom", 20)
+	if marginBottom == 20 {
+		if v := getFloatFromStyle(req.StyleConfig, "margin_bottom", 0); v > 0 {
+			marginBottom = v
+		}
+	}
 
-	pdf.SetMargins(
-		getFloatFromStyle(req.StyleConfig, "margin_left", 25),
-		getFloatFromStyle(req.StyleConfig, "margin_top", 20),
-		getFloatFromStyle(req.StyleConfig, "margin_right", 25),
-	)
-	pdf.SetAutoPageBreak(true, getFloatFromStyle(req.StyleConfig, "margin_bottom", 20))
+	fontReg := zhFontRegular
+	fontBd := zhFontBold
+	if !zhFontAvailable {
+		pdf.AddTTFFont("helvetica", findHelvetica())
+		fontReg = "helvetica"
+		fontBd = "helvetica"
+	}
 
 	pdf.AddPage()
+	pdf.SetMargins(marginLeft, marginTop, marginRight, marginBottom)
 
-	renderResumeContent(pdf, req.Content, req.StyleConfig, primaryColor, accentColor, fontSize, lineSpacing)
+	ctx := &pdfRenderContext{
+		pdf:         &pdf,
+		fontReg:     fontReg,
+		fontBd:      fontBd,
+		pageW:       gopdf.PageSizeA4.W,
+		leftMargin:  marginLeft,
+		rightMargin: marginRight,
+	}
+
+	renderResumeContent(ctx, req.Content, primaryColor, accentColor, fontSize, lineSpacing)
 
 	var buf bytes.Buffer
-	if err := pdf.Output(&buf); err != nil {
+	if err := pdf.Write(&buf); err != nil {
+		log.Printf("[PDF ERROR] Write failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    500,
 			"message": "生成PDF失败",
@@ -74,25 +138,146 @@ func (pc *PDFController) ExportPDF(c *gin.Context) {
 	if filename == "" {
 		filename = fmt.Sprintf("简历_%s.pdf", time.Now().Format("20060102150405"))
 	}
+	if !strings.HasSuffix(strings.ToLower(filename), ".pdf") {
+		filename += ".pdf"
+	}
 
 	c.Header("Content-Type", "application/pdf")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	c.Data(http.StatusOK, "application/pdf", buf.Bytes())
 }
 
-func addChineseFont(pdf *gofpdf.Fpdf, fontDir string) {
-	regularFont := fontDir + "/NotoSansSC-Regular.ttf"
-	boldFont := fontDir + "/NotoSansSC-Bold.ttf"
+type pdfRenderContext struct {
+	pdf         *gopdf.GoPdf
+	fontReg     string
+	fontBd      string
+	pageW       float64
+	leftMargin  float64
+	rightMargin float64
+}
 
-	if fileExists(regularFont) && fileExists(boldFont) {
-		pdf.AddUTF8Font("zh", "", regularFont)
-		pdf.AddUTF8Font("zh", "B", boldFont)
-	} else {
-		pdf.AddFont("Arial", "", "")
-		pdf.AddFont("Arial", "B", "")
-		pdf.SetFont("Arial", "", 12)
-		pdf.AliasNbPages("{nb}")
+func (c *pdfRenderContext) contentW() float64 {
+	return c.pageW - c.leftMargin - c.rightMargin
+}
+
+func (c *pdfRenderContext) setFont(style string, size float64) {
+	font := c.fontReg
+	if style == "B" {
+		font = c.fontBd
 	}
+	c.pdf.SetFont(font, "", size)
+}
+
+func (c *pdfRenderContext) setTextColor(hex string) {
+	r, g, b := hexToRGB(hex)
+	c.pdf.SetTextColor(uint8(r), uint8(g), uint8(b))
+}
+
+func (c *pdfRenderContext) setRGBTextColor(r, g, b int) {
+	c.pdf.SetTextColor(uint8(r), uint8(g), uint8(b))
+}
+
+func (c *pdfRenderContext) setDrawColor(hex string) {
+	r, g, b := hexToRGB(hex)
+	c.pdf.SetStrokeColor(uint8(r), uint8(g), uint8(b))
+}
+
+func (c *pdfRenderContext) setFillColor(hex string) {
+	r, g, b := hexToRGB(hex)
+	c.pdf.SetFillColor(uint8(r), uint8(g), uint8(b))
+}
+
+func (c *pdfRenderContext) cell(w, h float64, text string) {
+	opt := gopdf.CellOption{Align: gopdf.Left}
+	c.pdf.CellWithOption(&gopdf.Rect{W: w, H: h}, text, opt)
+}
+
+func (c *pdfRenderContext) br(h float64) {
+	c.pdf.Br(h)
+}
+
+func (c *pdfRenderContext) multiCell(w, h float64, text string) {
+	if text == "" {
+		return
+	}
+	opt := gopdf.CellOption{Align: gopdf.Left}
+	c.pdf.MultiCellWithOption(&gopdf.Rect{W: w, H: h}, text, opt)
+}
+
+func (c *pdfRenderContext) rect(x, y, w, h float64) {
+	c.pdf.RectFromUpperLeftWithStyle(x, y, w, h, "F")
+}
+
+func (c *pdfRenderContext) line(x1, y1, x2, y2 float64) {
+	c.pdf.Line(x1, y1, x2, y2)
+}
+
+func (c *pdfRenderContext) getY() float64 {
+	return c.pdf.GetY()
+}
+
+func (c *pdfRenderContext) setY(y float64) {
+	c.pdf.SetY(y)
+}
+
+func findHelvetica() string {
+	candidates := []string{
+		"C:\\Windows\\Fonts\\arial.ttf",
+		"C:\\Windows\\Fonts\\ARIAL.TTF",
+		"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+		"/usr/share/fonts/TTF/DejaVuSans.ttf",
+		"/System/Library/Fonts/Helvetica.ttc",
+	}
+	for _, p := range candidates {
+		if fileExists(p) && fileSize(p) > 1000 {
+			return p
+		}
+	}
+	return ""
+}
+
+func setupFonts(pdf *gopdf.GoPdf) bool {
+	fontDir, _ := filepath.Abs("./fonts")
+	if _, err := os.Stat(fontDir); os.IsNotExist(err) {
+		fontDir, _ = filepath.Abs("../server/fonts")
+	}
+
+	candidates := []struct {
+		regular string
+		bold    string
+	}{
+		{filepath.Join(fontDir, "NotoSansSC-Regular.ttf"), filepath.Join(fontDir, "NotoSansSC-Bold.ttf")},
+		{filepath.Join(fontDir, "NotoSansSC-Regular.otf"), filepath.Join(fontDir, "NotoSansSC-Bold.otf")},
+		{filepath.Join(fontDir, "SimHei.ttf"), filepath.Join(fontDir, "SimHei.ttf")},
+		{filepath.Join(fontDir, "SimKai.ttf"), filepath.Join(fontDir, "SimKai.ttf")},
+		{filepath.Join(fontDir, "MicrosoftYaHei.ttc"), filepath.Join(fontDir, "MicrosoftYaHei.ttc")},
+		{"C:\\Windows\\Fonts\\simhei.ttf", "C:\\Windows\\Fonts\\simhei.ttf"},
+		{"C:\\Windows\\Fonts\\msyh.ttc", "C:\\Windows\\Fonts\\msyh.ttc"},
+		{"C:\\Windows\\Fonts\\simsun.ttc", "C:\\Windows\\Fonts\\simsun.ttc"},
+		{"C:\\Windows\\Fonts\\simkai.ttf", "C:\\Windows\\Fonts\\simkai.ttf"},
+	}
+
+	for _, c := range candidates {
+		if fileExists(c.regular) && fileSize(c.regular) > 1000 {
+			boldPath := c.regular
+			if fileExists(c.bold) && fileSize(c.bold) > 1000 {
+				boldPath = c.bold
+			}
+			log.Printf("[PDF INFO] Trying gopdf font: regular=%s bold=%s", c.regular, boldPath)
+			if err := pdf.AddTTFFont(zhFontRegular, c.regular); err != nil {
+				log.Printf("[PDF WARN] AddTTFFont regular failed for %s: %v", c.regular, err)
+				continue
+			}
+			if err := pdf.AddTTFFont(zhFontBold, boldPath); err != nil {
+				log.Printf("[PDF WARN] AddTTFFont bold failed for %s: %v", boldPath, err)
+				continue
+			}
+			log.Printf("[PDF INFO] gopdf fonts loaded successfully")
+			return true
+		}
+	}
+	log.Printf("[PDF WARN] No Chinese font found for gopdf")
+	return false
 }
 
 func fileExists(filename string) bool {
@@ -100,12 +285,23 @@ func fileExists(filename string) bool {
 	return err == nil
 }
 
+func fileSize(filename string) int64 {
+	if info, err := os.Stat(filename); err == nil {
+		return info.Size()
+	}
+	return 0
+}
+
 func getFloatFromStyle(style models.JSON, key string, defaultValue float64) float64 {
 	if val, ok := style[key]; ok {
 		switch v := val.(type) {
 		case float64:
 			return v
+		case float32:
+			return float64(v)
 		case int:
+			return float64(v)
+		case int64:
 			return float64(v)
 		}
 	}
@@ -132,7 +328,33 @@ func hexToRGB(hex string) (int, int, int) {
 	return int(r), int(g), int(b)
 }
 
-func renderResumeContent(pdf *gofpdf.Fpdf, content models.JSON, style models.JSON, primaryColor, accentColor string, fontSize, lineSpacing float64) {
+func getModuleType(mod map[string]interface{}) string {
+	if t, ok := mod["type"].(string); ok && t != "" {
+		return t
+	}
+	if id, ok := mod["id"].(string); ok {
+		known := map[string]bool{
+			"basic": true, "summary": true, "evaluation": true,
+			"education": true, "experience": true,
+			"skills": true, "projects": true,
+		}
+		if known[id] {
+			return id
+		}
+	}
+	return ""
+}
+
+func getBasicField(basic map[string]interface{}, keys ...string) string {
+	for _, k := range keys {
+		if v, ok := basic[k].(string); ok && v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func renderResumeContent(c *pdfRenderContext, content models.JSON, primaryColor, accentColor string, fontSize, lineSpacing float64) {
 	modules, ok := content["modules"].([]interface{})
 	if !ok {
 		return
@@ -141,7 +363,8 @@ func renderResumeContent(pdf *gofpdf.Fpdf, content models.JSON, style models.JSO
 	moduleList := make([]map[string]interface{}, 0)
 	for _, m := range modules {
 		if mod, ok := m.(map[string]interface{}); ok {
-			if visible, _ := mod["visible"].(bool); visible {
+			visible, _ := mod["visible"].(bool)
+			if visible || mod["visible"] == nil {
 				moduleList = append(moduleList, mod)
 			}
 		}
@@ -154,115 +377,147 @@ func renderResumeContent(pdf *gofpdf.Fpdf, content models.JSON, style models.JSO
 	})
 
 	for _, mod := range moduleList {
-		moduleID, _ := mod["id"].(string)
 		moduleName, _ := mod["name"].(string)
-
-		renderModuleHeader(pdf, moduleName, accentColor, fontSize)
-
-		switch moduleID {
-		case "basic":
-			renderBasicInfo(pdf, content, fontSize, lineSpacing, primaryColor)
-		case "summary":
-			renderSummary(pdf, content, fontSize, lineSpacing)
-		case "education":
-			renderEducation(pdf, content, fontSize, lineSpacing, accentColor)
-		case "experience":
-			renderExperience(pdf, content, fontSize, lineSpacing, accentColor)
-		case "skills":
-			renderSkills(pdf, content, fontSize, lineSpacing)
-		case "projects":
-			renderProjects(pdf, content, fontSize, lineSpacing, accentColor)
+		if moduleName == "" {
+			moduleName = getModuleType(mod)
+		}
+		moduleType := getModuleType(mod)
+		if moduleType == "" {
+			continue
 		}
 
-		pdf.Ln(5)
+		renderModuleHeader(c, moduleName, accentColor, fontSize)
+
+		switch moduleType {
+		case "basic":
+			renderBasicInfo(c, content, fontSize, lineSpacing, primaryColor)
+		case "summary":
+			renderSummary(c, content, fontSize, lineSpacing)
+		case "evaluation":
+			renderEvaluation(c, content, fontSize, lineSpacing)
+		case "education":
+			renderEducation(c, content, fontSize, lineSpacing, accentColor)
+		case "experience":
+			renderExperience(c, content, fontSize, lineSpacing, accentColor)
+		case "skills":
+			renderSkills(c, content, fontSize, lineSpacing)
+		case "projects":
+			renderProjects(c, content, fontSize, lineSpacing, accentColor)
+		}
+
+		c.br(5)
 	}
 }
 
-func renderModuleHeader(pdf *gofpdf.Fpdf, name string, accentColor string, fontSize float64) {
-	r, g, b := hexToRGB(accentColor)
-	pdf.SetDrawColor(r, g, b)
-	pdf.SetFillColor(r, g, b)
-	pdf.Rect(10, pdf.GetY(), 3, fontSize+2, "F")
+func renderModuleHeader(c *pdfRenderContext, name string, accentColor string, fontSize float64) {
+	c.setDrawColor(accentColor)
+	c.setFillColor(accentColor)
+	x := c.leftMargin
+	y := c.getY()
+	c.rect(x, y, 3, fontSize+2)
 
-	pdf.SetFont("zh", "B", fontSize+2)
-	pdf.SetTextColor(r, g, b)
-	pdf.Cell(5, fontSize+2, "")
-	pdf.Cell(0, fontSize+2, name)
-	pdf.Ln(fontSize + 6)
+	c.setFont("B", fontSize+2)
+	c.setTextColor(accentColor)
+	c.br(0)
+	x2 := c.leftMargin + 5
+	c.pdf.SetX(x2)
+	c.cell(c.contentW()-5, fontSize+2, name)
+	c.br(fontSize + 6)
 
-	pdf.SetDrawColor(200, 200, 200)
-	pdf.Line(10, pdf.GetY(), 200, pdf.GetY())
-	pdf.Ln(4)
+	c.setDrawColor("#C8C8C8")
+	y2 := c.getY()
+	c.line(x, y2, c.pageW-c.rightMargin, y2)
+	c.br(4)
 }
 
-func renderBasicInfo(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing float64, primaryColor string) {
+func renderBasicInfo(c *pdfRenderContext, content models.JSON, fontSize, lineSpacing float64, primaryColor string) {
 	basic, ok := content["basic"].(map[string]interface{})
 	if !ok {
 		return
 	}
 
-	name, _ := basic["name"].(string)
+	name := getBasicField(basic, "name")
+	lineH := fontSize * lineSpacing
 	if name != "" {
-		r, g, b := hexToRGB(primaryColor)
-		pdf.SetFont("zh", "B", fontSize+6)
-		pdf.SetTextColor(r, g, b)
-		pdf.Cell(0, fontSize+4, name)
-		pdf.Ln(fontSize + 6)
+		c.setFont("B", fontSize+6)
+		c.setTextColor(primaryColor)
+		c.cell(c.contentW(), fontSize+4, name)
+		c.br(fontSize + 6)
 	}
 
-	pdf.SetFont("zh", "", fontSize)
-	pdf.SetTextColor(50, 50, 50)
+	jobIntention := getBasicField(basic, "job_intention", "title")
+	if jobIntention != "" {
+		c.setFont("", fontSize)
+		c.setRGBTextColor(100, 100, 100)
+		c.cell(c.contentW(), lineH, jobIntention)
+		c.br(lineH + 2)
+	}
 
-	infoItems := []string{"title", "phone", "email", "github", "website", "address", "location"}
-	lineH := fontSize * lineSpacing
+	c.setFont("", fontSize)
+	c.setRGBTextColor(50, 50, 50)
 
-	for _, key := range infoItems {
-		if val, ok := basic[key].(string); ok && val != "" {
-			label := getLabelForKey(key)
-			pdf.Cell(20, lineH, label+":")
-			pdf.Cell(0, lineH, val)
-			pdf.Ln(lineH)
+	infoRows := [][]string{
+		{"phone", "电话"},
+		{"email", "邮箱"},
+		{"city", "城市"},
+		{"location", "城市"},
+		{"address", "地址"},
+		{"github", "GitHub"},
+		{"website", "网站"},
+	}
+	written := map[string]bool{}
+	for _, row := range infoRows {
+		key := row[0]
+		label := row[1]
+		if written[label] {
+			continue
+		}
+		val := getBasicField(basic, key)
+		if val != "" {
+			c.setFont("B", fontSize)
+			c.setRGBTextColor(80, 80, 80)
+			c.pdf.SetX(c.leftMargin)
+			c.cell(18, lineH, label+":")
+			c.setFont("", fontSize)
+			c.setRGBTextColor(50, 50, 50)
+			c.cell(c.contentW()-18, lineH, val)
+			c.br(lineH)
+			written[label] = true
 		}
 	}
 }
 
-func getLabelForKey(key string) string {
-	labels := map[string]string{
-		"title":    "职位",
-		"phone":    "电话",
-		"email":    "邮箱",
-		"github":   "GitHub",
-		"website":  "网站",
-		"address":  "地址",
-		"location": "城市",
-		"name":     "姓名",
-	}
-	if label, ok := labels[key]; ok {
-		return label
-	}
-	return key
-}
-
-func renderSummary(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing float64) {
+func renderSummary(c *pdfRenderContext, content models.JSON, fontSize, lineSpacing float64) {
 	summary, ok := content["summary"].(string)
 	if !ok || summary == "" {
 		return
 	}
 
-	pdf.SetFont("zh", "", fontSize)
-	pdf.SetTextColor(50, 50, 50)
+	c.setFont("", fontSize)
+	c.setRGBTextColor(50, 50, 50)
 	lineH := fontSize * lineSpacing
-	pdf.MultiCell(0, lineH, summary, "", "", false)
+	c.multiCell(c.contentW(), lineH, summary)
 }
 
-func renderEducation(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing float64, accentColor string) {
+func renderEvaluation(c *pdfRenderContext, content models.JSON, fontSize, lineSpacing float64) {
+	evaluation, ok := content["evaluation"].(string)
+	if !ok || evaluation == "" {
+		return
+	}
+
+	c.setFont("", fontSize)
+	c.setRGBTextColor(50, 50, 50)
+	lineH := fontSize * lineSpacing
+	c.multiCell(c.contentW(), lineH, evaluation)
+}
+
+func renderEducation(c *pdfRenderContext, content models.JSON, fontSize, lineSpacing float64, accentColor string) {
 	education, ok := content["education"].([]interface{})
 	if !ok || len(education) == 0 {
 		return
 	}
 
 	lineH := fontSize * lineSpacing
-	r, g, b := hexToRGB(accentColor)
 
 	for _, item := range education {
 		edu, ok := item.(map[string]interface{})
@@ -277,37 +532,36 @@ func renderEducation(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacin
 		endDate, _ := edu["end_date"].(string)
 		description, _ := edu["description"].(string)
 
-		pdf.SetFont("zh", "B", fontSize)
-		pdf.SetTextColor(r, g, b)
-		pdf.Cell(0, lineH, school)
-		pdf.Ln(lineH)
+		c.setFont("B", fontSize)
+		c.setTextColor(accentColor)
+		c.cell(c.contentW(), lineH, school)
+		c.br(lineH)
 
-		pdf.SetFont("zh", "", fontSize)
-		pdf.SetTextColor(80, 80, 80)
+		c.setFont("", fontSize)
+		c.setRGBTextColor(80, 80, 80)
 		degreeInfo := fmt.Sprintf("%s  %s", degree, major)
 		if startDate != "" || endDate != "" {
 			degreeInfo += fmt.Sprintf("  |  %s - %s", startDate, endDate)
 		}
-		pdf.Cell(0, lineH, degreeInfo)
-		pdf.Ln(lineH)
+		c.cell(c.contentW(), lineH, degreeInfo)
+		c.br(lineH)
 
 		if description != "" {
-			pdf.SetTextColor(50, 50, 50)
-			pdf.MultiCell(0, lineH, description, "", "", false)
+			c.setRGBTextColor(50, 50, 50)
+			c.multiCell(c.contentW(), lineH, description)
 		}
 
-		pdf.Ln(3)
+		c.br(3)
 	}
 }
 
-func renderExperience(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing float64, accentColor string) {
+func renderExperience(c *pdfRenderContext, content models.JSON, fontSize, lineSpacing float64, accentColor string) {
 	experience, ok := content["experience"].([]interface{})
 	if !ok || len(experience) == 0 {
 		return
 	}
 
 	lineH := fontSize * lineSpacing
-	r, g, b := hexToRGB(accentColor)
 
 	for _, item := range experience {
 		exp, ok := item.(map[string]interface{})
@@ -321,51 +575,58 @@ func renderExperience(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpaci
 		endDate, _ := exp["end_date"].(string)
 		description, _ := exp["description"].(string)
 
-		pdf.SetFont("zh", "B", fontSize)
-		pdf.SetTextColor(r, g, b)
-		pdf.Cell(0, lineH, fmt.Sprintf("%s  -  %s", company, position))
-		pdf.Ln(lineH)
+		c.setFont("B", fontSize)
+		c.setTextColor(accentColor)
+		title := company
+		if position != "" {
+			title += "  -  " + position
+		}
+		c.cell(c.contentW(), lineH, title)
+		c.br(lineH)
 
-		pdf.SetFont("zh", "", fontSize)
-		pdf.SetTextColor(80, 80, 80)
+		c.setFont("", fontSize)
+		c.setRGBTextColor(80, 80, 80)
 		dateStr := startDate
 		if endDate != "" {
 			dateStr += " - " + endDate
-		} else {
+		} else if startDate != "" {
 			dateStr += " - 至今"
 		}
-		pdf.Cell(0, lineH, dateStr)
-		pdf.Ln(lineH)
+		if dateStr != "" {
+			c.cell(c.contentW(), lineH, dateStr)
+			c.br(lineH)
+		}
 
 		if description != "" {
-			pdf.SetTextColor(50, 50, 50)
-			pdf.MultiCell(0, lineH, description, "", "", false)
+			c.setRGBTextColor(50, 50, 50)
+			c.multiCell(c.contentW(), lineH, description)
 		}
 
 		if highlights, ok := exp["highlights"].([]interface{}); ok && len(highlights) > 0 {
-			pdf.Ln(2)
+			c.br(2)
 			for _, h := range highlights {
 				if hl, ok := h.(string); ok && hl != "" {
-					pdf.SetTextColor(50, 50, 50)
-					pdf.Cell(5, lineH, "•")
-					pdf.MultiCell(0, lineH, " "+hl, "", "", false)
+					c.setRGBTextColor(50, 50, 50)
+					c.pdf.SetX(c.leftMargin)
+					c.cell(5, lineH, "•")
+					c.multiCell(c.contentW()-5, lineH, " "+hl)
 				}
 			}
 		}
 
-		pdf.Ln(3)
+		c.br(3)
 	}
 }
 
-func renderSkills(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing float64) {
+func renderSkills(c *pdfRenderContext, content models.JSON, fontSize, lineSpacing float64) {
 	skills, ok := content["skills"].([]interface{})
 	if !ok || len(skills) == 0 {
 		return
 	}
 
 	lineH := fontSize * lineSpacing
-	pdf.SetFont("zh", "", fontSize)
-	pdf.SetTextColor(50, 50, 50)
+	c.setFont("", fontSize)
+	c.setRGBTextColor(50, 50, 50)
 
 	for _, item := range skills {
 		skill, ok := item.(map[string]interface{})
@@ -377,23 +638,23 @@ func renderSkills(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing f
 		items, _ := skill["items"].(string)
 
 		if category != "" {
-			pdf.SetFont("zh", "B", fontSize)
-			pdf.Cell(25, lineH, category+":")
+			c.setFont("B", fontSize)
+			c.pdf.SetX(c.leftMargin)
+			c.cell(25, lineH, category+":")
 		}
-		pdf.SetFont("zh", "", fontSize)
-		pdf.MultiCell(0, lineH, items, "", "", false)
-		pdf.Ln(2)
+		c.setFont("", fontSize)
+		c.multiCell(c.contentW()-25, lineH, items)
+		c.br(2)
 	}
 }
 
-func renderProjects(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing float64, accentColor string) {
+func renderProjects(c *pdfRenderContext, content models.JSON, fontSize, lineSpacing float64, accentColor string) {
 	projects, ok := content["projects"].([]interface{})
 	if !ok || len(projects) == 0 {
 		return
 	}
 
 	lineH := fontSize * lineSpacing
-	r, g, b := hexToRGB(accentColor)
 
 	for _, item := range projects {
 		proj, ok := item.(map[string]interface{})
@@ -407,42 +668,43 @@ func renderProjects(pdf *gofpdf.Fpdf, content models.JSON, fontSize, lineSpacing
 		endDate, _ := proj["end_date"].(string)
 		description, _ := proj["description"].(string)
 
-		pdf.SetFont("zh", "B", fontSize)
-		pdf.SetTextColor(r, g, b)
+		c.setFont("B", fontSize)
+		c.setTextColor(accentColor)
 		title := name
 		if role != "" {
 			title += "  -  " + role
 		}
-		pdf.Cell(0, lineH, title)
-		pdf.Ln(lineH)
+		c.cell(c.contentW(), lineH, title)
+		c.br(lineH)
 
-		pdf.SetFont("zh", "", fontSize)
-		pdf.SetTextColor(80, 80, 80)
+		c.setFont("", fontSize)
+		c.setRGBTextColor(80, 80, 80)
 		dateStr := startDate
 		if endDate != "" {
 			dateStr += " - " + endDate
 		}
 		if dateStr != "" {
-			pdf.Cell(0, lineH, dateStr)
-			pdf.Ln(lineH)
+			c.cell(c.contentW(), lineH, dateStr)
+			c.br(lineH)
 		}
 
 		if description != "" {
-			pdf.SetTextColor(50, 50, 50)
-			pdf.MultiCell(0, lineH, description, "", "", false)
+			c.setRGBTextColor(50, 50, 50)
+			c.multiCell(c.contentW(), lineH, description)
 		}
 
 		if highlights, ok := proj["highlights"].([]interface{}); ok && len(highlights) > 0 {
-			pdf.Ln(2)
+			c.br(2)
 			for _, h := range highlights {
 				if hl, ok := h.(string); ok && hl != "" {
-					pdf.SetTextColor(50, 50, 50)
-					pdf.Cell(5, lineH, "•")
-					pdf.MultiCell(0, lineH, " "+hl, "", "", false)
+					c.setRGBTextColor(50, 50, 50)
+					c.pdf.SetX(c.leftMargin)
+					c.cell(5, lineH, "•")
+					c.multiCell(c.contentW()-5, lineH, " "+hl)
 				}
 			}
 		}
 
-		pdf.Ln(3)
+		c.br(3)
 	}
 }
