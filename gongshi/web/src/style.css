@@ -1,0 +1,198 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f7fa;
+  color: #303133;
+}
+
+.page-container {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.flex-row {
+  display: flex;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-pending {
+  color: #e6a23c;
+}
+
+.status-approved {
+  color: #67c23a;
+}
+
+.status-rejected {
+  color: #f56c6c;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-weight: 600;
+  padding: 8px;
+  color: #606266;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.calendar-day {
+  min-height: 110px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  background: #fff;
+}
+
+.calendar-day:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
+}
+
+.calendar-day.other-month {
+  background: #fafafa;
+  color: #c0c4cc;
+}
+
+.calendar-day.today {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.calendar-day.selected {
+  border-color: #409eff;
+  background: #409eff;
+  color: #fff;
+}
+
+.calendar-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.calendar-day-date {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.calendar-day-hours {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.calendar-day.selected .calendar-day-hours {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.calendar-day-items {
+  font-size: 11px;
+  overflow: hidden;
+}
+
+.calendar-day-item {
+  background: rgba(64, 158, 255, 0.1);
+  color: #409eff;
+  border-radius: 3px;
+  padding: 2px 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-day.selected .calendar-day-item {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.stat-card .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #303133;
+  margin: 10px 0;
+}
+
+.stat-card .stat-label {
+  color: #909399;
+  font-size: 14px;
+}
+
+.stat-card.primary .stat-value { color: #409eff; }
+.stat-card.success .stat-value { color: #67c23a; }
+.stat-card.warning .stat-value { color: #e6a23c; }
+.stat-card.danger .stat-value { color: #f56c6c; }
+
+.chart-container {
+  width: 100%;
+  height: 320px;
+}
