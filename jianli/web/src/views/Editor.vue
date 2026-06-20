@@ -55,10 +55,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useResumeStore } from '@/stores/resume'
 import { exportPDF } from '@/api/resume'
+import { useDebounceFn } from '@vueuse/core'
 import ModuleList from '@/components/ModuleList.vue'
 import ContentEditor from '@/components/ContentEditor.vue'
 import StylePanel from '@/components/StylePanel.vue'
