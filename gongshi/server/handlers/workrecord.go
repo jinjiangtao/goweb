@@ -299,7 +299,7 @@ func ApproveWorkRecord(c *gin.Context) {
 		reviewerID = 1
 	}
 	reviewerIDUint := uint(reviewerID)
-	now := time.Now()
+	now := models.LocalTime(time.Now())
 
 	record.Status = "approved"
 	record.ReviewerID = &reviewerIDUint
@@ -345,7 +345,7 @@ func RejectWorkRecord(c *gin.Context) {
 		reviewerID = 1
 	}
 	reviewerIDUint := uint(reviewerID)
-	now := time.Now()
+	now := models.LocalTime(time.Now())
 
 	record.Status = "rejected"
 	record.ReviewerID = &reviewerIDUint
@@ -371,7 +371,7 @@ func BatchApprove(c *gin.Context) {
 		reviewerID = 1
 	}
 	reviewerIDUint := uint(reviewerID)
-	now := time.Now()
+	now := models.LocalTime(time.Now())
 
 	result := database.DB.Model(&models.WorkRecord{}).
 		Where("id IN ? AND status = ?", body.IDs, "pending").
