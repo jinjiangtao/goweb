@@ -64,19 +64,19 @@
           @touchend="stopDrawing"
         ></canvas>
         
-        <div 
-          v-for="user in onlineUsers" 
-          :key="user.id"
-          class="user-cursor"
-          v-if="user.id !== currentUser.id && user.cursor"
-          :style="{
-            left: user.cursor.x * zoom + pan.x + 'px',
-            top: user.cursor.y * zoom + pan.y + 'px',
-            borderColor: user.color
-          }"
-        >
-          <div class="cursor-tip" :style="{ background: user.color }">{{ user.name }}</div>
-        </div>
+        <template v-for="user in onlineUsers" :key="user.id">
+          <div
+            v-if="currentUser && user && user.id !== currentUser.id && user.cursor"
+            class="user-cursor"
+            :style="{
+              left: user.cursor.x * zoom + pan.x + 'px',
+              top: user.cursor.y * zoom + pan.y + 'px',
+              borderColor: user.color
+            }"
+          >
+            <div class="cursor-tip" :style="{ background: user.color }">{{ user.name }}</div>
+          </div>
+        </template>
         
         <div 
           v-if="textInputVisible"
