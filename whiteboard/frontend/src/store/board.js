@@ -140,6 +140,16 @@ export const useBoardStore = defineStore('board', () => {
     users.value = newUsers
   }
 
+  function setCurrentUserInfo(userInfo) {
+    currentUser.value = { ...currentUser.value, ...userInfo, connected: true }
+    const existing = users.value.find(u => u.id === currentUser.value.id)
+    if (!existing) {
+      users.value.push({ ...currentUser.value })
+    } else {
+      Object.assign(existing, currentUser.value)
+    }
+  }
+
   function selectLayer(id) {
     selectedLayerId.value = id === selectedLayerId.value ? null : id
   }
@@ -197,6 +207,7 @@ export const useBoardStore = defineStore('board', () => {
     removeUser,
     updateUserCursor,
     setUsers,
+    setCurrentUserInfo,
     selectLayer,
     moveLayerUp,
     moveLayerDown

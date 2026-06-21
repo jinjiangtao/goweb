@@ -24,6 +24,7 @@ const (
 	MsgRedo      MessageType = "redo"
 	MsgPing      MessageType = "ping"
 	MsgPong      MessageType = "pong"
+	MsgUserInfo  MessageType = "user_info"
 )
 
 type Message struct {

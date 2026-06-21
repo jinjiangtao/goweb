@@ -185,7 +185,11 @@ export function useCanvas(canvasRef) {
   function drawTempElement() {
     if (!tempCtx.value || !store.currentElement) return
     clearTempCanvas()
+    tempCtx.value.save()
+    tempCtx.value.translate(store.pan.x, store.pan.y)
+    tempCtx.value.scale(store.zoom, store.zoom)
     drawElement(store.currentElement, tempCtx.value)
+    tempCtx.value.restore()
   }
 
   function drawTempShape(endPos) {
@@ -201,7 +205,11 @@ export function useCanvas(canvasRef) {
       timestamp: Date.now()
     }
     
+    tempCtx.value.save()
+    tempCtx.value.translate(store.pan.x, store.pan.y)
+    tempCtx.value.scale(store.zoom, store.zoom)
     drawElement(element, tempCtx.value)
+    tempCtx.value.restore()
   }
 
   function clearTempCanvas() {
@@ -222,10 +230,6 @@ export function useCanvas(canvasRef) {
     
     for (const element of store.elements) {
       drawElement(element, ctx.value)
-    }
-    
-    if (store.currentElement) {
-      drawElement(store.currentElement, ctx.value)
     }
     
     ctx.value.restore()

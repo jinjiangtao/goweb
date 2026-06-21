@@ -46,6 +46,18 @@ func HandleWebSocket(c *gin.Context) {
 	hub := ws.GetHub(boardID)
 	user := ws.NewUser(userName, userColor, conn)
 
+	userInfo := map[string]interface{}{
+		"id":     user.ID,
+		"name":   user.Name,
+		"color":  user.Color,
+		"avatar": user.Avatar,
+	}
+	user.Send <- ws.Message{
+		Type:      ws.MsgUserInfo,
+		Data:      userInfo,
+		Timestamp: time.Now().UnixMilli(),
+	}
+
 	hub.Register <- user
 
 	syncData := getBoardSyncData(boardID)

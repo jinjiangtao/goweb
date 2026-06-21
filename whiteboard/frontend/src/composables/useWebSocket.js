@@ -70,6 +70,9 @@ export function useWebSocket() {
 
   function handleMessage(message) {
     switch (message.type) {
+      case 'user_info':
+        handleUserInfo(message.data)
+        break
       case 'draw':
         handleDrawMessage(message.data)
         break
@@ -101,6 +104,10 @@ export function useWebSocket() {
         send({ type: 'pong', data: {} })
         break
     }
+  }
+
+  function handleUserInfo(userInfo) {
+    store.setCurrentUserInfo(userInfo)
   }
 
   function handleDrawMessage(element) {
@@ -135,6 +142,10 @@ export function useWebSocket() {
 
   function handleUsersList(usersList) {
     const usersWithStatus = usersList.map(u => ({ ...u, connected: true }))
+    const self = usersWithStatus.find(u => u.id === store.currentUser.id)
+    if (!self) {
+      usersWithStatus.push({ ...store.currentUser, connected: true })
+    }
     store.setUsers(usersWithStatus)
   }
 
