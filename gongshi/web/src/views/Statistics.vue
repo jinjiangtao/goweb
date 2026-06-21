@@ -165,10 +165,11 @@ const dialogTitle = ref('')
 let dailyChart = null
 let projectChart = null
 
-const maxProjectHours = computed(() => Math.max(...projectStats.value.map(p => p.total), 1))
+const maxProjectHours = computed(() => Math.max(...(projectStats.value || []).map(p => p.total), 1))
 
 const getStatusHours = (status) => {
-  const item = overall.by_status.find(s => s.status === status)
+  const list = overall.by_status || []
+  const item = list.find(s => s.status === status)
   return item?.hours || 0
 }
 
@@ -210,6 +211,7 @@ const initCharts = () => {
 
 const renderDailyChart = () => {
   if (!dailyChart) return
+  const stats = dailyStats.value || []
   const dates = []
   const approved = []
   const pending = []
@@ -221,7 +223,7 @@ const renderDailyChart = () => {
   while (start.isBefore(end) || start.isSame(end, 'day')) {
     const ds = start.format('YYYY-MM-DD')
     dates.push(start.format('MM-DD'))
-    const item = dailyStats.value.find(d => d.work_date === ds)
+    const item = stats.find(d => d.work_date === ds)
     approved.push(item?.approved || 0)
     pending.push(item?.pending || 0)
     rejected.push(item?.rejected || 0)
@@ -248,7 +250,7 @@ const renderDailyChart = () => {
 
 const renderProjectChart = () => {
   if (!projectChart) return
-  const data = projectStats.value.map(p => ({
+  const data = (projectStats.value || []).map(p => ({
     name: p.project_name,
     value: p.total
   }))
@@ -281,22 +283,24 @@ const renderProjectChart = () => {
 const loadDaily = async () => {
   const params = { ...rangeParams.value }
   if (filterUserId.value) params.user_id = filterUserId.value
-  dailyStats.value = await getDailyStats(params)
+  const res = await getDailyStats(params)
+  dailyStats.value = Array.isArray(res) ? res : []
 }
 
 const loadProject = async () => {
   const params = { ...rangeParams.value }
   if (filterUserId.value) params.user_id = filterUserId.value
-  projectStats.value = await getProjectStats(params)
+  const res = await getProjectStats(params)
+  projectStats.value = Array.isArray(res) ? res : []
 }
 
 const loadOverall = async () => {
   const params = { ...rangeParams.value }
   if (filterUserId.value) params.user_id = filterUserId.value
-  const res = await getOverallStats(params)
-  overall.total_hours = res.total_hours
-  overall.total_records = res.total_records
-  overall.by_status = res.by_status
+  const res = await getOverallStats(params) || {}
+  overall.total_hours = res.total_hours || 0
+  overall.total_records = res.total_records || 0
+  overall.by_status = Array.isArray(res.by_status) ? res.by_status : []
 }
 
 const loadAll = async () => {

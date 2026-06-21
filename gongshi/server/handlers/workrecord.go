@@ -427,6 +427,9 @@ func GetDailyHoursSummary(c *gin.Context) {
 	}
 
 	query.Order("work_date").Scan(&results)
+	if results == nil {
+		results = []DailyResult{}
+	}
 	c.JSON(http.StatusOK, results)
 }
 
@@ -468,6 +471,9 @@ func GetProjectHoursSummary(c *gin.Context) {
 	}
 
 	query.Order("total DESC").Scan(&results)
+	if results == nil {
+		results = []ProjectResult{}
+	}
 	c.JSON(http.StatusOK, results)
 }
 
@@ -523,6 +529,13 @@ func GetOverallStats(c *gin.Context) {
 	query.Session(&gorm.Session{}).Count(&totalRecords)
 	database.DB.Table("(?) as t", query.Select("hours")).
 		Select("COALESCE(SUM(hours),0)").Scan(&totalHours)
+
+	if byStatus == nil {
+		byStatus = []StatusCount{}
+	}
+	if byUser == nil {
+		byUser = []UserStat{}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"total_records": totalRecords,
