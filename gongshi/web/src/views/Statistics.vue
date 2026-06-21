@@ -232,14 +232,19 @@ const renderDailyChart = () => {
 
   dailyChart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['已通过', '待审核', '已驳回'], bottom: 0 },
-    grid: { left: 40, right: 20, top: 20, bottom: 40 },
+    legend: { data: ['已通过', '待审核', '已驳回'], top: 0 },
+    grid: { left: 50, right: 20, top: 40, bottom: 70 },
     xAxis: {
       type: 'category',
       data: dates,
-      axisLabel: { fontSize: 11, rotate: dates.length > 20 ? 45 : 0 }
+      axisLabel: {
+        fontSize: 10,
+        rotate: dates.length > 15 ? 60 : 0,
+        interval: dates.length > 30 ? Math.floor(dates.length / 12) : 0,
+        margin: 12
+      }
     },
-    yAxis: { type: 'value', name: '小时' },
+    yAxis: { type: 'value', name: '小时', nameLocation: 'middle', nameGap: 30 },
     series: [
       { name: '已通过', type: 'bar', stack: 'total', data: approved, itemStyle: { color: '#67c23a' } },
       { name: '待审核', type: 'bar', stack: 'total', data: pending, itemStyle: { color: '#e6a23c' } },

@@ -5,6 +5,7 @@ import (
 	"gongshi/models"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -394,10 +395,13 @@ func GetDailyHoursSummary(c *gin.Context) {
 	endDate := c.Query("end_date")
 
 	currentUserID, _ := strconv.Atoi(c.GetHeader("X-User-ID"))
+	role := c.GetHeader("X-User-Role")
+	isAdmin := strings.EqualFold(role, "admin")
+
 	if currentUserID == 0 {
 		currentUserID = 2
 	}
-	if userID == 0 {
+	if userID == 0 && !isAdmin {
 		userID = currentUserID
 	}
 
@@ -411,14 +415,16 @@ func GetDailyHoursSummary(c *gin.Context) {
 
 	var results []DailyResult
 	query := database.DB.Model(&models.WorkRecord{}).
-		Select("work_date, "+
-			"COALESCE(SUM(hours),0) as total, "+
-			"COALESCE(SUM(CASE WHEN status='approved' THEN hours ELSE 0 END),0) as approved, "+
-			"COALESCE(SUM(CASE WHEN status='pending' THEN hours ELSE 0 END),0) as pending, "+
+		Select("work_date, " +
+			"COALESCE(SUM(hours),0) as total, " +
+			"COALESCE(SUM(CASE WHEN status='approved' THEN hours ELSE 0 END),0) as approved, " +
+			"COALESCE(SUM(CASE WHEN status='pending' THEN hours ELSE 0 END),0) as pending, " +
 			"COALESCE(SUM(CASE WHEN status='rejected' THEN hours ELSE 0 END),0) as rejected").
-		Where("user_id = ?", userID).
 		Group("work_date")
 
+	if userID > 0 {
+		query = query.Where("user_id = ?", userID)
+	}
 	if startDate != "" {
 		query = query.Where("work_date >= ?", startDate)
 	}
@@ -437,6 +443,17 @@ func GetProjectHoursSummary(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	userID, _ := strconv.Atoi(c.Query("user_id"))
+
+	currentUserID, _ := strconv.Atoi(c.GetHeader("X-User-ID"))
+	role := c.GetHeader("X-User-Role")
+	isAdmin := strings.EqualFold(role, "admin")
+
+	if currentUserID == 0 {
+		currentUserID = 2
+	}
+	if userID == 0 && !isAdmin {
+		userID = currentUserID
+	}
 
 	type ProjectResult struct {
 		ProjectID   uint    `json:"project_id"`
@@ -481,6 +498,17 @@ func GetOverallStats(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	userID, _ := strconv.Atoi(c.Query("user_id"))
+
+	currentUserID, _ := strconv.Atoi(c.GetHeader("X-User-ID"))
+	role := c.GetHeader("X-User-Role")
+	isAdmin := strings.EqualFold(role, "admin")
+
+	if currentUserID == 0 {
+		currentUserID = 2
+	}
+	if userID == 0 && !isAdmin {
+		userID = currentUserID
+	}
 
 	query := database.DB.Model(&models.WorkRecord{})
 	if startDate != "" {
