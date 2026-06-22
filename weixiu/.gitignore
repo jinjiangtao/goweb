@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.idea/
+.vscode/
+*.db
+*.db-journal
+data/
+uploads/
+.DS_Store
+npm-debug.log*
+go.sum
