@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -55,7 +56,12 @@ func UploadMedia(c *gin.Context) {
 		return
 	}
 
-	files := form.File["files"]
+	var files []*multipart.FileHeader
+	if f := form.File["file"]; len(f) > 0 {
+		files = f
+	} else if f := form.File["files"]; len(f) > 0 {
+		files = f
+	}
 	if len(files) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择要上传的文件"})
 		return

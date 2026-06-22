@@ -19,7 +19,9 @@
             :show-file-list="false"
             multiple
             accept="image/*,video/*"
+            name="file"
             :on-success="handleUploadSuccess"
+            :on-error="handleUploadError"
             :before-upload="beforeUpload"
             drag
             class="upload-btn"
@@ -74,7 +76,9 @@
           :show-file-list="false"
           multiple
           accept="image/*,video/*"
+          name="file"
           :on-success="handleUploadSuccess"
+          :on-error="handleUploadError"
           :before-upload="beforeUpload"
           drag
           class="upload-area"
@@ -364,6 +368,15 @@ const handleUploadSuccess = (response) => {
   ElMessage.success(response.message || '上传成功')
   loadMedia()
   loadAlbum()
+}
+
+const handleUploadError = (error) => {
+  try {
+    const err = JSON.parse(error.message)
+    ElMessage.error(err.error || '上传失败')
+  } catch {
+    ElMessage.error('上传失败，请重试')
+  }
 }
 
 const changeSort = (field) => {
