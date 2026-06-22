@@ -127,6 +127,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import draggable from 'vuedraggable'
 import Layout from '@/components/Layout.vue'
 import { getAlbums, createAlbum, updateAlbum, deleteAlbum as deleteAlbumApi, updateAlbumSort } from '@/utils/api'
+import { getCoverUrl } from '@/utils/url'
 
 const router = useRouter()
 
@@ -142,12 +143,6 @@ const albumForm = reactive({
   is_private: false,
   password: ''
 })
-
-const getCoverUrl = (path) => {
-  if (!path) return ''
-  const filename = path.split('/').pop()
-  return `/uploads/thumbnails/${filename}`
-}
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''

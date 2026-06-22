@@ -141,6 +141,7 @@ import { ElMessage } from 'element-plus'
 import Layout from '@/components/Layout.vue'
 import { useUserStore } from '@/store/user'
 import { getAlbums, createAlbum as createAlbumApi, getMediaList, getShareLinks } from '@/utils/api'
+import { getCoverUrl, getThumbUrl } from '@/utils/url'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -161,19 +162,6 @@ const albumForm = reactive({
   is_private: false,
   password: ''
 })
-
-const getCoverUrl = (path) => {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  return `/uploads/thumbnails/${path.split('/').pop()}`
-}
-
-const getThumbUrl = (path) => {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  const filename = path.split('/').pop()
-  return `/uploads/thumbnails/${filename}`
-}
 
 const goToAlbum = (id) => {
   router.push(`/album/${id}`)

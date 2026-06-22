@@ -63,8 +63,8 @@ func SaveUploadedFile(file *multipart.FileHeader, uploadDir, thumbDir string) (*
 
 	return &ImageInfo{
 		FileName:  uuidName,
-		FilePath:  filePath,
-		ThumbPath: thumbPath,
+		FilePath:  uuidName,
+		ThumbPath: uuidName,
 		FileSize:  fileSize,
 		Width:     width,
 		Height:    height,

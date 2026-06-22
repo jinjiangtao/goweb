@@ -241,6 +241,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import draggable from 'vuedraggable'
 import Layout from '@/components/Layout.vue'
 import { getAlbum, getMediaList, deleteMedia, batchDeleteMedia, updateMediaSort, downloadMedia, createShareLink } from '@/utils/api'
+import { getThumbUrl, getOriginalUrl } from '@/utils/url'
 
 const route = useRoute()
 const router = useRouter()
@@ -295,18 +296,6 @@ const viewerStyle = computed(() => ({
   transform: `scale(${scale.value}) translate(${position.value.x / scale.value}px, ${position.value.y / scale.value}px)`,
   cursor: isDragging.value ? 'grabbing' : 'grab'
 }))
-
-const getThumbUrl = (path) => {
-  if (!path) return ''
-  const filename = path.split('/').pop()
-  return `/uploads/thumbnails/${filename}`
-}
-
-const getOriginalUrl = (path) => {
-  if (!path) return ''
-  const filename = path.split('/').pop()
-  return `/uploads/${filename}`
-}
 
 const isSelected = (id) => selectedMedia.value.includes(id)
 

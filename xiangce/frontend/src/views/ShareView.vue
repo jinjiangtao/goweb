@@ -130,6 +130,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getShareByToken, verifySharePassword, recordShareVisit } from '@/utils/api'
+import { getThumbUrl, getOriginalUrl } from '@/utils/url'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,18 +152,6 @@ let slideshowTimer = null
 const passwordForm = ref({
   password: ''
 })
-
-const getThumbUrl = (path) => {
-  if (!path) return ''
-  const filename = path.split('/').pop()
-  return `/uploads/thumbnails/${filename}`
-}
-
-const getOriginalUrl = (path) => {
-  if (!path) return ''
-  const filename = path.split('/').pop()
-  return `/uploads/${filename}`
-}
 
 const loadShare = async () => {
   loading.value = true

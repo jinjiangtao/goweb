@@ -85,7 +85,7 @@ func UploadMedia(c *gin.Context) {
 		}
 
 		if imgInfo.FileType == "image" {
-			utils.CompressImage(imgInfo.FilePath, 85)
+			utils.CompressImage(filepath.Join(uploadDir, imgInfo.FilePath), 85)
 		}
 
 		media := models.Media{
@@ -182,8 +182,8 @@ func DeleteMedia(c *gin.Context) {
 		return
 	}
 
-	os.Remove(media.FilePath)
-	os.Remove(media.ThumbPath)
+	os.Remove(filepath.Join("./uploads", media.FilePath))
+	os.Remove(filepath.Join("./uploads/thumbnails", media.ThumbPath))
 
 	models.DB.Delete(&media)
 	c.JSON(http.StatusOK, gin.H{"message": "文件已删除"})
@@ -203,7 +203,7 @@ func DownloadMedia(c *gin.Context) {
 		return
 	}
 
-	c.FileAttachment(media.FilePath, media.OriginalName)
+	c.FileAttachment(filepath.Join("./uploads", media.FilePath), media.OriginalName)
 }
 
 func BatchDeleteMedia(c *gin.Context) {
@@ -220,8 +220,8 @@ func BatchDeleteMedia(c *gin.Context) {
 	for _, id := range req.MediaIDs {
 		var media models.Media
 		if result := models.DB.Where("id = ? AND user_id = ?", id, userID).First(&media); result.Error == nil {
-			os.Remove(media.FilePath)
-			os.Remove(media.ThumbPath)
+			os.Remove(filepath.Join("./uploads", media.FilePath))
+			os.Remove(filepath.Join("./uploads/thumbnails", media.ThumbPath))
 			models.DB.Delete(&media)
 		}
 	}
@@ -259,7 +259,7 @@ func BatchDownloadMedia(c *gin.Context) {
 			continue
 		}
 
-		file, err := os.Open(media.FilePath)
+		file, err := os.Open(filepath.Join("./uploads", media.FilePath))
 		if err != nil {
 			continue
 		}
